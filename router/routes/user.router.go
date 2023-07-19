@@ -1,4 +1,4 @@
-package userRoutes
+package routes
 
 import (
 	userHandler "balkantask/handlers/user"

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -68,19 +69,10 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	user := model.User{
-		Username: input.Username,
-		Email:    input.Email,
-		Password: input.Password,
-		// Set other fields accordingly
-	}
-
-	errors := model.ValidateStruct(user)
-	if errors != nil {
+	if input.Password != input.PasswordConfirm {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Validation Error",
+			"message": "Password and password confirmation do not match",
 			"status":  "error",
-			"errors":  errors,
 		})
 	}
 
@@ -99,6 +91,29 @@ func CreateUser(c *fiber.Ctx) error {
 			"status":  "error",
 		})
 	}
+
+	user := model.User{
+		Username: input.Username,
+		Email:    input.Email,
+		// Set other fields accordingly
+	}
+
+	errors := model.ValidateStruct(user)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "Internal Server Error", "message": err.Error()})
+	}
+
+	user.Password = string(hashedPassword)
 
 	createdUser, err := userRepo.CreateUser(user)
 	if err != nil {

@@ -1,7 +1,7 @@
 package router
 
 import (
-	userRoutes "balkantask/router/routes"
+	"balkantask/router/routes"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -10,5 +10,6 @@ import (
 func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api", logger.New())
 
-	userRoutes.SetupUserRoutes(api)
+	routes.SetupUserRoutes(api)
+	routes.SetupAuthRoutes(api)
 }
