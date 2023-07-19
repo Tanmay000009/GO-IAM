@@ -1,0 +1,31 @@
+.env
+# Compiled object files
+*.o
+*.exe
+*.test
+*.prof
+
+# Compiled binary files
+*.exe
+*.out
+
+# Dependency directories
+/vendor/
+/go.sum
+
+# Output directories
+/dist/
+/build/
+
+# IDE and editor-specific files
+.idea/
+.vscode/
+
+# Log files
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+tmp
