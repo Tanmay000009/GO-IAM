@@ -3,9 +3,11 @@ package userHandler
 import (
 	userRepo "balkantask/database/userRepo"
 	"balkantask/model"
+	userSchema "balkantask/schemas/user"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 func GetUsers(c *fiber.Ctx) error {
@@ -57,11 +59,8 @@ func GetUserById(c *fiber.Ctx) error {
 }
 
 func CreateUser(c *fiber.Ctx) error {
-
-	var user model.User
-
-	err := c.BodyParser(&user)
-
+	var input userSchema.SignUpInput
+	err := c.BodyParser(&input)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"message": "Bad Request",
@@ -69,8 +68,39 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err = userRepo.CreateUser(user)
+	user := model.User{
+		Username: input.Username,
+		Email:    input.Email,
+		Password: input.Password,
+		// Set other fields accordingly
+	}
 
+	errors := model.ValidateStruct(user)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	// Check if email already exists
+	existingUser, err := userRepo.FindUserByEmail(input.Email)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	if existingUser.ID != uuid.Nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"message": "Email already in use",
+			"status":  "error",
+		})
+	}
+
+	createdUser, err := userRepo.CreateUser(user)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Internal Server Error",
@@ -78,10 +108,12 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
+	response := userSchema.MapUserRecord(&createdUser)
+
 	return c.Status(201).JSON(fiber.Map{
 		"message": "Created",
 		"status":  "success",
-		"data":    user,
+		"data":    response,
 	})
 }
 
@@ -98,7 +130,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err = userRepo.UpdateUser(user)
+	updatedUser, err := userRepo.UpdateUser(user)
 
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -107,10 +139,12 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
+	response := userSchema.MapUserRecord(&updatedUser)
+
 	return c.Status(200).JSON(fiber.Map{
 		"message": "OK",
 		"status":  "success",
-		"data":    user,
+		"data":    response,
 	})
 }
 
@@ -127,7 +161,7 @@ func DeleteUser(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err = userRepo.DeleteUser(user)
+	deletedUser, err := userRepo.DeleteUser(user)
 
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -136,9 +170,11 @@ func DeleteUser(c *fiber.Ctx) error {
 		})
 	}
 
+	response := userSchema.MapUserRecord(&deletedUser)
+
 	return c.Status(200).JSON(fiber.Map{
 		"message": "OK",
 		"status":  "success",
-		"data":    user,
+		"data":    response,
 	})
 }

@@ -1,7 +1,7 @@
 package database
 
 import (
-	Models "balkantask/model"
+	"balkantask/model"
 	"fmt"
 	"log"
 	"os"
@@ -12,11 +12,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-type DBInstance struct {
-	DB *gorm.DB
-}
-
-var DB DBInstance
+var DB *gorm.DB
 
 func Connect() {
 	port_ := os.Getenv("DB_PORT")
@@ -33,17 +29,17 @@ func Connect() {
 	})
 
 	if err != nil {
-		log.Fatal("Failed to connect to database. \n", err)
+		log.Fatal("Failed to connect to the database.\n", err)
 		os.Exit(2)
 	}
 
-	log.Println("Connected to database.")
-	db.Logger = logger.Default.LogMode(logger.Info)
-
-	log.Println("running migrations")
-	db.AutoMigrate(Models.User{})
-
-	DB = DBInstance{
-		DB: db,
+	log.Println("Running database migrations")
+	err = db.AutoMigrate(&model.User{})
+	if err != nil {
+		log.Fatal("Migration failed.\n", err)
+		os.Exit(1)
 	}
+
+	DB = db
+	log.Println("Connected successfully to the database")
 }
