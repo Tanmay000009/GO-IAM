@@ -5,11 +5,10 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type User struct {
-	gorm.Model
+	BaseModel
 	ID        uuid.UUID  `gorm:"type:uuid;"`
 	Username  string     `gorm:"type:varchar(100);not null"`
 	Email     string     `gorm:"type:varchar(100);uniqueIndex;not null"`
@@ -25,12 +24,6 @@ type ErrorResponse struct {
 	Field string `json:"field"`
 	Tag   string `json:"tag"`
 	Value string `json:"value,omitempty"`
-}
-
-func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
-	// UUID version 4
-	user.ID = uuid.New()
-	return
 }
 
 func ValidateStruct[T any](payload T) []*ErrorResponse {

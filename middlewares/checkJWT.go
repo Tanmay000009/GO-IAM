@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	userRepo "balkantask/database/userRepo"
+	userRepo "balkantask/database/user"
 	userSchema "balkantask/schemas/user"
 
 	"fmt"

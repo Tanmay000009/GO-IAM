@@ -1,7 +1,7 @@
 package userHandler
 
 import (
-	userRepo "balkantask/database/userRepo"
+	userRepo "balkantask/database/user"
 	"balkantask/model"
 	userSchema "balkantask/schemas/user"
 
@@ -60,7 +60,7 @@ func GetUserById(c *fiber.Ctx) error {
 }
 
 func CreateUser(c *fiber.Ctx) error {
-	var input userSchema.SignUpInput
+	var input userSchema.CreateUser
 	err := c.BodyParser(&input)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{

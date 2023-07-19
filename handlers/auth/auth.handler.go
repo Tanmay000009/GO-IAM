@@ -1,8 +1,9 @@
 package authHandler
 
 import (
-	userRepo "balkantask/database/userRepo"
+	userRepo "balkantask/database/user"
 	"balkantask/model"
+	authSchema "balkantask/schemas/auth"
 	userSchema "balkantask/schemas/user"
 	"fmt"
 	"os"
@@ -12,7 +13,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func SignInUser(c *fiber.Ctx) error {
@@ -87,4 +90,77 @@ func GetMe(c *fiber.Ctx) error {
 
 	// Handle the case when the value is nil or not of the correct type
 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Invalid user data"})
+}
+
+func SignUpOrg(c *fiber.Ctx) error {
+	var input authSchema.SignupInput
+	err := c.BodyParser(&input)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"message": "Bad Request",
+			"status":  "error",
+		})
+	}
+
+	if input.Password != input.PasswordConfirm {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Password and password confirmation do not match",
+			"status":  "error",
+		})
+	}
+
+	// Check if email already exists
+	existingUser, err := userRepo.FindUserByEmail(input.Email)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	if existingUser.ID != uuid.Nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"message": "Email already in use",
+			"status":  "error",
+		})
+	}
+
+	user := model.User{
+		Username: input.Username,
+		Email:    input.Email,
+		// Set other fields accordingly
+	}
+
+	errors := model.ValidateStruct(user)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "Internal Server Error", "message": err.Error()})
+	}
+
+	user.Password = string(hashedPassword)
+
+	createdUser, err := userRepo.CreateUser(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	response := userSchema.MapUserRecord(&createdUser)
+
+	return c.Status(201).JSON(fiber.Map{
+		"message": "Created",
+		"status":  "success",
+		"data":    response,
+	})
 }
