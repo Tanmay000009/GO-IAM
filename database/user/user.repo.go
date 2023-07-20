@@ -24,7 +24,7 @@ func FindUsers() ([]userSchema.UserResponse, error) {
 func FindUserByIdWithPassword(id uuid.UUID) (model.User, error) {
 	var user model.User
 	db := database.DB
-	err := db.First(&user, "id = ?", id).Error
+	err := db.Preload("Roles").First(&user, "id = ?", id).Error
 	return user, err
 }
 
