@@ -5,25 +5,60 @@ import (
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
-	userroles "balkantask/utils"
+	roles "balkantask/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 func GetUsers(c *fiber.Ctx) error {
+	// Check for org and user in locals
+	org, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	users, err := userRepo.FindUsers()
+	// Check for unauthorized access
+	if !orgOK && !userOK {
+		return c.Status(400).JSON(fiber.Map{
+			"message": "Unauthorized",
+			"status":  "error",
+		})
+	}
+
+	// Get users based on the context (organization or user)
+	var users []userSchema.UserResponse
+	var err error
+
+	if orgOK && org.ID != uuid.Nil {
+		// Fetch users based on the organization ID
+		users, err = userRepo.FindUsersByOrgId(org.ID)
+	} else if userOK {
+		// Check if the user has the required role
+		if !HasAnyRole(user.Roles, roles.UserReadAccess) {
+			return c.Status(403).JSON(fiber.Map{
+				"message": "Forbidden",
+				"status":  "error",
+			})
+		}
+		// Fetch users based on the user's OrgID
+		users, err = userRepo.FindUsersByOrgId(user.OrgId)
+	} else {
+		// Handle the case when neither org nor user is present or of the correct type
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid token",
+			"status":  "error",
+		})
+	}
 
 	if err != nil {
+		// Handle internal server errors
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Internal Server Error",
 			"status":  "error",
 		})
 	}
 
+	// Return the users data
 	return c.Status(200).JSON(fiber.Map{
 		"message": "OK",
 		"status":  "success",
@@ -32,12 +67,8 @@ func GetUsers(c *fiber.Ctx) error {
 }
 
 func GetUserById(c *fiber.Ctx) error {
-
 	id := c.Params("id")
-
-	// validate if id is valid uuid
-	_, err := uuid.Parse(id)
-
+	id_uuid, err := uuid.Parse(id)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"message": "Invalid ID",
@@ -45,8 +76,24 @@ func GetUserById(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err := userRepo.FindUserById(id)
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
+	if userOK {
+		if user.ID != id_uuid && !HasAnyRole(user.Roles, roles.UserReadAccess) {
+			return c.Status(403).JSON(fiber.Map{
+				"message": "Forbidden",
+				"status":  "error",
+			})
+		}
+	} else if !orgOK {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid token",
+			"status":  "error",
+		})
+	}
+
+	user_, err := userRepo.FindUserWithOrgById(id)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Internal Server Error",
@@ -57,7 +104,7 @@ func GetUserById(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{
 		"message": "OK",
 		"status":  "success",
-		"data":    user,
+		"data":    user_,
 	})
 }
 
@@ -71,44 +118,26 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	if input.Password != input.PasswordConfirm {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Password and password confirmation do not match",
+	// Check if the user is an organization or has the necessary permission
+	org, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !HasAnyRole(user.Roles, roles.UserWriteAccess) {
+		// If neither org nor user is present or not of the correct type, or the user doesn't have the necessary permission, return an error
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
 			"status":  "error",
 		})
 	}
 
-	// Check if email already exists
-	existingUser, err := userRepo.FindUserByUsername(input.Username)
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Internal Server Error",
-			"status":  "error",
-		})
-	}
-
-	if existingUser.ID != uuid.Nil {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"message": "Username already in use",
-			"status":  "error",
-		})
-	}
-
-	// Fetch the org details from the middleware
-	org, orgExists := c.Locals("org").(orgSchema.OrgResponse)
-
-	if !orgExists {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Unauthorized",
-			"status":  "error",
-		})
-	}
-
-	user := model.User{
+	// Create the new user
+	newUser := model.User{
 		Username: input.Username,
+		// Set other fields accordingly
 	}
 
-	errors := model.ValidateStruct(user)
+	// Validate the new user data
+	errors := model.ValidateStruct(newUser)
 	if errors != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Validation Error",
@@ -117,16 +146,19 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
+	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "Internal Server Error",
+			"message": err.Error(),
+		})
 	}
 
-	user.Password = string(hashedPassword)
-	user.OrgID = org.ID // Set the organization ID for the user
-	user.Roles = []userroles.Role{}
-	createdUser, err := userRepo.CreateUser(user)
+	newUser.Password = string(hashedPassword)
+	newUser.OrgID = org.ID // Set the organization ID if the user is created by an organization
+
+	createdUser, err := userRepo.CreateUser(newUser)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal Server Error",
@@ -134,12 +166,11 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	response := userSchema.MapUserRecord(&createdUser)
-
+	// Return the created user data
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Created",
 		"status":  "success",
-		"data":    response,
+		"data":    createdUser,
 	})
 }
 
@@ -165,12 +196,10 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	response := userSchema.MapUserRecord(&updatedUser)
-
 	return c.Status(200).JSON(fiber.Map{
 		"message": "OK",
 		"status":  "success",
-		"data":    response,
+		"data":    updatedUser,
 	})
 }
 
@@ -187,7 +216,7 @@ func DeleteUser(c *fiber.Ctx) error {
 		})
 	}
 
-	deletedUser, err := userRepo.DeleteUser(user)
+	userDeleted, err := userRepo.DeleteUser(user)
 
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -196,11 +225,20 @@ func DeleteUser(c *fiber.Ctx) error {
 		})
 	}
 
-	response := userSchema.MapUserRecord(&deletedUser)
-
 	return c.Status(200).JSON(fiber.Map{
 		"message": "OK",
 		"status":  "success",
-		"data":    response,
+		"data":    userDeleted,
 	})
+}
+
+func HasAnyRole(roles []roles.Role, targetRoles ...roles.Role) bool {
+	for _, targetRole := range targetRoles {
+		for _, role := range roles {
+			if role == targetRole {
+				return true
+			}
+		}
+	}
+	return false
 }

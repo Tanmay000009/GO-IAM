@@ -12,7 +12,7 @@ type User struct {
 	Username  string     `gorm:"type:varchar(100);not null; uniqueIndex"`
 	Password  string     `gorm:"type:varchar(100);not null"`
 	OrgID     uuid.UUID  `gorm:"type:uuid;"`
-	Org       Org        `gorm:"foreignKey:OrgID"`
+	Org       *Org       `gorm:"foreignKey:OrgID"`
 	CreatedAt *time.Time `gorm:"not null;default:now()"`
 	UpdatedAt *time.Time `gorm:"not null;default:now()"`
 }

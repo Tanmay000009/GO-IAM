@@ -48,7 +48,7 @@ func CheckJWT(c *fiber.Ctx) error {
 
 	}
 
-	user, err := userRepo.FindUserById(fmt.Sprint(claims["sub"]))
+	user, err := userRepo.FindUserByIdWithPassword(fmt.Sprint(claims["sub"]))
 	org, orgErr := orgRepo.FindOrgById(fmt.Sprint(claims["sub"]))
 	if err != nil && orgErr != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid token"})
