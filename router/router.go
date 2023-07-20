@@ -12,4 +12,5 @@ func SetupRoutes(app *fiber.App) {
 
 	routes.SetupUserRoutes(api)
 	routes.SetupAuthRoutes(api)
+	routes.SetupRolesRoutes(api)
 }

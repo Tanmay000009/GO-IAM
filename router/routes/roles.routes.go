@@ -7,8 +7,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func SetupRolesRoutes(app *fiber.App) {
-	roles := app.Group("/roles", middleware.CheckJWT)
+func SetupRolesRoutes(router fiber.Router) {
+	roles := router.Group("/roles", middleware.CheckJWT)
 
 	roles.Get("/", rolesHandler.GetAllRoles)
 	roles.Get("/:id", rolesHandler.GetRoleById)
