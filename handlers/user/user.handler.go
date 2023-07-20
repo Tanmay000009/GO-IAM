@@ -34,7 +34,7 @@ func GetUsers(c *fiber.Ctx) error {
 		users, err = userRepo.FindUsersByOrgId(org.ID)
 	} else if userOK {
 		// Check if the user has the required role
-		if !roles.HasAnyRole(user.Roles, roles.UserReadAccess) {
+		if !roles.HasAnyRole(user.Roles, []roles.Role{roles.UserReadAccess, roles.OrgFullAccess, roles.OrgReadAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 			return c.Status(403).JSON(fiber.Map{
 				"message": "Forbidden",
 				"status":  "error",
@@ -80,7 +80,7 @@ func GetUserById(c *fiber.Ctx) error {
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
 	if userOK {
-		if user.ID != id_uuid && !roles.HasAnyRole(user.Roles, roles.UserReadAccess) {
+		if user.ID != id_uuid && !roles.HasAnyRole(user.Roles, []roles.Role{roles.UserReadAccess, roles.OrgFullAccess, roles.OrgReadAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 			return c.Status(403).JSON(fiber.Map{
 				"message": "Forbidden",
 				"status":  "error",
@@ -122,7 +122,7 @@ func CreateUser(c *fiber.Ctx) error {
 	org, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, roles.UserWriteAccess) {
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		// If neither org nor user is present or not of the correct type, or the user doesn't have the necessary permission, return an error
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
@@ -200,7 +200,7 @@ func UpdateUser(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && user.ID != updatedUser.ID && !roles.HasAnyRole(user.Roles, roles.UserWriteAccess) {
+	if !orgOK && !userOK && user.ID != updatedUser.ID && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",

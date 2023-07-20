@@ -16,7 +16,7 @@ const (
 	OrgReadAccess   Role = "ORG_READ_ACCESS"
 )
 
-func HasAnyRole(roles []model.Role, targetRoles ...Role) bool {
+func HasAnyRole(roles []model.Role, targetRoles []Role) bool {
 	for _, targetRole := range targetRoles {
 		for _, role := range roles {
 			if Role(role.Name) == targetRole {
