@@ -4,7 +4,6 @@ import (
 	orgRepo "balkantask/database/orgRepo"
 	userRepo "balkantask/database/user"
 	"balkantask/model"
-	authSchema "balkantask/schemas/auth"
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
 	"fmt"
@@ -34,7 +33,7 @@ func SignInUser(c *fiber.Ctx) error {
 	}
 
 	var user model.User
-	_, err := userRepo.FindUserByUsername(strings.ToLower(payload.Username))
+	user, err := userRepo.FindUserByUsername(strings.ToLower(payload.Username))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid email or Password"})
 	}
@@ -75,7 +74,7 @@ func SignInUser(c *fiber.Ctx) error {
 }
 
 func SignInOrg(c *fiber.Ctx) error {
-	var payload *authSchema.SignInInput
+	var payload *orgSchema.SignInInput
 
 	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": err.Error()})
@@ -88,7 +87,7 @@ func SignInOrg(c *fiber.Ctx) error {
 	}
 
 	var org model.Org
-	_, err := orgRepo.FindOrgByEmail(strings.ToLower(payload.Email))
+	org, err := orgRepo.FindOrgByEmail(strings.ToLower(payload.Email))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid email or Password"})
 	}
@@ -149,7 +148,7 @@ func GetMe(c *fiber.Ctx) error {
 }
 
 func SignUpOrg(c *fiber.Ctx) error {
-	var input authSchema.SignupInput
+	var input orgSchema.SignupInput
 	err := c.BodyParser(&input)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
