@@ -11,6 +11,11 @@ type SignupInput struct {
 	ConfirmPassword string `json:"confirmPassword" validate:"required,min=8"`
 }
 
+type SignInInput struct {
+	Email    string `json:"email"  validate:"required"`
+	Password string `json:"password"  validate:"required"`
+}
+
 // ValidatePassword checks if the password meets complexity requirements.
 func (s *SignupInput) ValidatePassword() bool {
 	if len(s.Password) < 8 {

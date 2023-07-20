@@ -74,6 +74,60 @@ func SignInUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "token": tokenString})
 }
 
+func SignInOrg(c *fiber.Ctx) error {
+	var payload *authSchema.SignInInput
+
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": err.Error()})
+	}
+
+	errors := model.ValidateStruct(payload)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errors)
+
+	}
+
+	var org model.Org
+	_, err := orgRepo.FindOrgByEmail(strings.ToLower(payload.Email))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid email or Password"})
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(org.Password), []byte(payload.Password))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid email or Password"})
+	}
+
+	// Create a new JWT token with a custom expiration time
+	tokenByte := jwt.New(jwt.SigningMethodHS256)
+	now := time.Now().UTC()
+	expirationTime := now.Add(time.Hour * 24) // Token will expire in 24 hours
+
+	claims := tokenByte.Claims.(jwt.MapClaims)
+	claims["sub"] = org.ID
+	claims["exp"] = expirationTime.Unix()
+	claims["iat"] = now.Unix()
+	claims["nbf"] = now.Unix()
+
+	config := os.Getenv("JWT_SECRET")
+	tokenString, err := tokenByte.SignedString([]byte(config))
+	if err != nil {
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "false", "message": fmt.Sprintf("generating JWT Token failed: %v", err)})
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    tokenString,
+		Path:     "/",
+		MaxAge:   86400, // Token will expire in 24 hours (in seconds)
+		Secure:   false,
+		HTTPOnly: true,
+		Domain:   "localhost",
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "token": tokenString})
+}
+
 func LogoutUser(c *fiber.Ctx) error {
 	expired := time.Now().Add(-time.Hour * 24)
 	c.Cookie(&fiber.Cookie{
