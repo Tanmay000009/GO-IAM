@@ -11,6 +11,7 @@ type BaseModel struct {
 	ID        uuid.UUID  `gorm:"type:uuid; not null;"`
 	CreatedAt *time.Time `gorm:"not null;default:now()"`
 	UpdatedAt *time.Time `gorm:"not null;default:now()"`
+	Roles     []string   `gorm:"-"`
 }
 
 func (base *BaseModel) BeforeCreate(tx *gorm.DB) (err error) {

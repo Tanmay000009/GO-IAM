@@ -77,7 +77,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Check if email already exists
-	existingUser, err := userRepo.FindUserByEmail(input.Email)
+	existingUser, err := userRepo.FindUserByUsername(input.Username)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Internal Server Error",
@@ -94,7 +94,6 @@ func CreateUser(c *fiber.Ctx) error {
 
 	user := model.User{
 		Username: input.Username,
-		Email:    input.Email,
 		// Set other fields accordingly
 	}
 

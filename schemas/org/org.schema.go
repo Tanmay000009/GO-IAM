@@ -11,9 +11,9 @@ type OrgReponse struct {
 	ID        uuid.UUID `json:"id,omitempty"`
 	Username  string    `json:"username,omitempty"`
 	Email     string    `json:"email,omitempty"`
-	Role      string    `json:"role,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Roles     []string  `json:"roles,omitempty"`
 }
 
 func MapOrgRecord(user *model.Org) OrgReponse {
@@ -23,5 +23,6 @@ func MapOrgRecord(user *model.Org) OrgReponse {
 		Email:     user.Email,
 		CreatedAt: *user.CreatedAt,
 		UpdatedAt: *user.UpdatedAt,
+		Roles:     user.Roles,
 	}
 }

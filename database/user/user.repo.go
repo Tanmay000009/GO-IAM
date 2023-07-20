@@ -19,10 +19,10 @@ func FindUserById(id string) (model.User, error) {
 	return user, err
 }
 
-func FindUserByEmail(email string) (model.User, error) {
+func FindUserByUsername(username string) (model.User, error) {
 	var user model.User
 	db := database.DB
-	err := db.First(&user, "email = ?", email).Error
+	err := db.First(&user, "username = ?", username).Error
 	return user, err
 }
 

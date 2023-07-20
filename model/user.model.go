@@ -8,10 +8,8 @@ import (
 
 type User struct {
 	BaseModel
-	Username  string     `gorm:"type:varchar(100);not null"`
-	Email     string     `gorm:"type:varchar(100);uniqueIndex;not null"`
+	Username  string     `gorm:"type:varchar(100);not null; uniqueIndex"`
 	Password  string     `gorm:"type:varchar(100);not null"`
-	Role      *string    `gorm:"type:varchar(50);default:'user';not null"`
 	CreatedAt *time.Time `gorm:"not null;default:now()"`
 	UpdatedAt *time.Time `gorm:"not null;default:now()"`
 }
