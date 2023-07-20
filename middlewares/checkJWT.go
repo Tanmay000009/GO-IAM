@@ -12,6 +12,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func CheckJWT(c *fiber.Ctx) error {
@@ -48,7 +49,14 @@ func CheckJWT(c *fiber.Ctx) error {
 
 	}
 
-	user, err := userRepo.FindUserByIdWithPassword(fmt.Sprint(claims["sub"]))
+	id_uuid, err := uuid.Parse(fmt.Sprint(claims["sub"]))
+
+	if err != nil {
+
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Something Went Wrong"})
+	}
+
+	user, err := userRepo.FindUserByIdWithPassword(id_uuid)
 	org, orgErr := orgRepo.FindOrgById(fmt.Sprint(claims["sub"]))
 	if err != nil && orgErr != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid token"})

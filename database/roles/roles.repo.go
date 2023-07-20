@@ -16,9 +16,9 @@ func GetAllRoles() ([]model.Role, error) {
 	return roles, err
 }
 
-func GetRoleById(id uuid.UUID) (roles.Role, error) {
+func GetRoleById(id uuid.UUID) (model.Role, error) {
 	db := database.DB
-	var role roles.Role
+	var role model.Role
 	err := db.First(&role, "id = ?", id).Error
 
 	return role, err

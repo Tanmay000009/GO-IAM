@@ -21,7 +21,7 @@ func FindUsers() ([]userSchema.UserResponse, error) {
 	return users_, err
 }
 
-func FindUserByIdWithPassword(id string) (model.User, error) {
+func FindUserByIdWithPassword(id uuid.UUID) (model.User, error) {
 	var user model.User
 	db := database.DB
 	err := db.First(&user, "id = ?", id).Error

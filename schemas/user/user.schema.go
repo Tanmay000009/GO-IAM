@@ -33,6 +33,11 @@ type UserResponseWithOrg struct {
 	Org       orgSchema.OrgResponse `json:"org,omitempty"`
 }
 
+type AddRoleToUser struct {
+	RoleId uuid.UUID `json:"role_id" validate:"required"`
+	UserId uuid.UUID `json:"user_id" validate:"required"`
+}
+
 func MapUserRecord(user *model.User) UserResponse {
 	return UserResponse{
 		ID:        user.ID,

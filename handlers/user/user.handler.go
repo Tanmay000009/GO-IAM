@@ -1,6 +1,7 @@
 package userHandler
 
 import (
+	rolesRepo "balkantask/database/roles"
 	userRepo "balkantask/database/user"
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
@@ -267,5 +268,75 @@ func DeleteUser(c *fiber.Ctx) error {
 		"message": "OK",
 		"status":  "success",
 		"data":    userDeleted,
+	})
+}
+
+func AddRoleToUser(c *fiber.Ctx) error {
+	var input userSchema.AddRoleToUser
+	err := c.BodyParser(&input)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Bad Request",
+			"status":  "error",
+		})
+	}
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	errors := model.ValidateStruct(input)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	user_, err := userRepo.FindUserByIdWithPassword(input.UserId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	role, err := rolesRepo.GetRoleById(input.RoleId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Role doesn't exist",
+			"status":  "error",
+		})
+	}
+
+	// Check if the user already has the role
+	if roles.HasAnyRole(user_.Roles, []roles.Role{roles.Role(role.Name)}) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "User already has the role",
+			"status":  "error",
+		})
+	}
+
+	user_.Roles = append(user_.Roles, role)
+
+	updatedUser, err := userRepo.UpdateUser(user_)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Role added to user",
+		"status":  "success",
+		"data":    updatedUser,
 	})
 }
