@@ -2,6 +2,7 @@ package rolesRepo
 
 import (
 	"balkantask/database"
+	"balkantask/model"
 	roles "balkantask/utils"
 
 	"github.com/google/uuid"
@@ -15,7 +16,7 @@ func GetAllRoles() ([]roles.Role, error) {
 	return roles, err
 }
 
-func GetRoleById(id string) (roles.Role, error) {
+func GetRoleById(id uuid.UUID) (roles.Role, error) {
 	db := database.DB
 	var role roles.Role
 	err := db.First(&role, "id = ?", id).Error
@@ -31,7 +32,7 @@ func GetRoleByName(name string) (roles.Role, error) {
 	return role, err
 }
 
-func CreateRole(role roles.Role) (roles.Role, error) {
+func CreateRole(role model.Role) (model.Role, error) {
 	db := database.DB
 	err := db.Create(&role).Error
 

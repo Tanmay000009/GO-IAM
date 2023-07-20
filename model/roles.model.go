@@ -1,7 +1,9 @@
 package model
 
+import "github.com/google/uuid"
+
 type Role struct {
-	ID    string `gorm:"type:uuid; not null;"`
-	Name  string `gorm:"type:varchar(100);not null"`
-	Users []User `gorm:"many2many:user_roles;"`
+	ID    uuid.UUID `gorm:"type:uuid; not null;"`
+	Name  string    `gorm:"type:varchar(100);not null"`
+	Users []User    `gorm:"many2many:user_roles;"`
 }
