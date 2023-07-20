@@ -58,6 +58,23 @@ func CreateRole(c *fiber.Ctx) error {
 		})
 	}
 
+	errors := model.ValidateStruct(role)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	exisitingRole, err := rolesRepo.GetRoleByName(role.Name)
+	if err == nil && exisitingRole.Name == role.Name {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Role already exists",
+			"status":  "error",
+		})
+	}
+
 	createdRole, err := rolesRepo.CreateRole(role)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
