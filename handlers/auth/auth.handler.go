@@ -214,7 +214,7 @@ func SignUpOrg(c *fiber.Ctx) error {
 	}
 
 	org.Password = string(hashedPassword)
-
+	org.Roles = []string{"superuser"}
 	createdOrg, err := orgRepo.CreateOrg(org)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{

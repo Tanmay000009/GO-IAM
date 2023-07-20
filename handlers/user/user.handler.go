@@ -3,6 +3,7 @@ package userHandler
 import (
 	userRepo "balkantask/database/user"
 	"balkantask/model"
+	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
 
 	"github.com/gofiber/fiber/v2"
@@ -63,7 +64,7 @@ func CreateUser(c *fiber.Ctx) error {
 	var input userSchema.CreateUser
 	err := c.BodyParser(&input)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Bad Request",
 			"status":  "error",
 		})
@@ -79,7 +80,7 @@ func CreateUser(c *fiber.Ctx) error {
 	// Check if email already exists
 	existingUser, err := userRepo.FindUserByUsername(input.Username)
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return c.Status(500).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal Server Error",
 			"status":  "error",
 		})
@@ -87,14 +88,23 @@ func CreateUser(c *fiber.Ctx) error {
 
 	if existingUser.ID != uuid.Nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"message": "Email already in use",
+			"message": "Username already in use",
+			"status":  "error",
+		})
+	}
+
+	// Fetch the org details from the middleware
+	org, orgExists := c.Locals("org").(orgSchema.OrgResponse)
+
+	if !orgExists {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Unauthorized",
 			"status":  "error",
 		})
 	}
 
 	user := model.User{
 		Username: input.Username,
-		// Set other fields accordingly
 	}
 
 	errors := model.ValidateStruct(user)
@@ -109,14 +119,15 @@ func CreateUser(c *fiber.Ctx) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "Internal Server Error", "message": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": err.Error()})
 	}
 
 	user.Password = string(hashedPassword)
-
+	user.OrgID = org.ID // Set the organization ID for the user
+	user.Roles = []string{"user"}
 	createdUser, err := userRepo.CreateUser(user)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal Server Error",
 			"status":  "error",
 		})
@@ -124,7 +135,7 @@ func CreateUser(c *fiber.Ctx) error {
 
 	response := userSchema.MapUserRecord(&createdUser)
 
-	return c.Status(201).JSON(fiber.Map{
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Created",
 		"status":  "success",
 		"data":    response,
