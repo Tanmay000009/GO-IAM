@@ -3,7 +3,6 @@ package userSchema
 import (
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
-	userroles "balkantask/utils"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,12 +15,12 @@ type CreateUser struct {
 }
 
 type UserResponse struct {
-	ID        uuid.UUID        `json:"id,omitempty"`
-	Username  string           `json:"username,omitempty"`
-	CreatedAt time.Time        `json:"created_at"`
-	UpdatedAt time.Time        `json:"updated_at"`
-	Roles     []userroles.Role `json:"roles"`
-	OrgId     uuid.UUID        `json:"org_id,omitempty"`
+	ID        uuid.UUID    `json:"id,omitempty"`
+	Username  string       `json:"username,omitempty"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+	Roles     []model.Role `json:"roles"`
+	OrgId     uuid.UUID    `json:"org_id,omitempty"`
 }
 
 type UserResponseWithOrg struct {
@@ -29,7 +28,7 @@ type UserResponseWithOrg struct {
 	Username  string                `json:"username,omitempty"`
 	CreatedAt time.Time             `json:"created_at"`
 	UpdatedAt time.Time             `json:"updated_at"`
-	Roles     []userroles.Role      `json:"roles"`
+	Roles     []model.Role          `json:"roles"`
 	OrgId     uuid.UUID             `json:"org_id,omitempty"`
 	Org       orgSchema.OrgResponse `json:"org,omitempty"`
 }

@@ -2,7 +2,6 @@ package orgSchema
 
 import (
 	"balkantask/model"
-	userroles "balkantask/utils"
 	"regexp"
 	"time"
 
@@ -10,12 +9,11 @@ import (
 )
 
 type OrgResponse struct {
-	ID        uuid.UUID        `json:"id,omitempty"`
-	Username  string           `json:"username,omitempty"`
-	Email     string           `json:"email,omitempty"`
-	CreatedAt time.Time        `json:"created_at"`
-	UpdatedAt time.Time        `json:"updated_at"`
-	Roles     []userroles.Role `json:"roles,omitempty"`
+	ID        uuid.UUID `json:"id,omitempty"`
+	Username  string    `json:"username,omitempty"`
+	Email     string    `json:"email,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 type SignInInput struct {
 	Email    string `json:"email"  validate:"required"`
@@ -36,7 +34,6 @@ func MapOrgRecord(user *model.Org) OrgResponse {
 		Email:     user.Email,
 		CreatedAt: *user.CreatedAt,
 		UpdatedAt: *user.UpdatedAt,
-		Roles:     user.Roles,
 	}
 }
 
