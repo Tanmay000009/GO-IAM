@@ -4,12 +4,10 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 )
 
 type User struct {
 	BaseModel
-	ID        uuid.UUID  `gorm:"type:uuid;"`
 	Username  string     `gorm:"type:varchar(100);not null"`
 	Email     string     `gorm:"type:varchar(100);uniqueIndex;not null"`
 	Password  string     `gorm:"type:varchar(100);not null"`

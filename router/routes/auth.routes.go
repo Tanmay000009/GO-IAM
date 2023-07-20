@@ -13,4 +13,5 @@ func SetupAuthRoutes(router fiber.Router) {
 	userRouter.Get("/me", authHandler.GetMe)
 	userRouter.Post("/login", authHandler.SignInUser)
 	userRouter.Post("/logout", authHandler.LogoutUser)
+	userRouter.Post("/signup", authHandler.SignUpOrg)
 }

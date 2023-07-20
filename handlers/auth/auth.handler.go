@@ -1,9 +1,11 @@
 package authHandler
 
 import (
+	orgRepo "balkantask/database/orgRepo"
 	userRepo "balkantask/database/user"
 	"balkantask/model"
 	authSchema "balkantask/schemas/auth"
+	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
 	"fmt"
 	"os"
@@ -102,15 +104,22 @@ func SignUpOrg(c *fiber.Ctx) error {
 		})
 	}
 
-	if input.Password != input.PasswordConfirm {
+	if input.Password != input.ConfirmPassword {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Password and password confirmation do not match",
 			"status":  "error",
 		})
 	}
 
+	if !input.ValidatePassword() {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number and one special character.",
+			"status":  "error",
+		})
+	}
+
 	// Check if email already exists
-	existingUser, err := userRepo.FindUserByEmail(input.Email)
+	exisitingOrg, err := orgRepo.FindOrgByEmail(input.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Internal Server Error",
@@ -118,20 +127,20 @@ func SignUpOrg(c *fiber.Ctx) error {
 		})
 	}
 
-	if existingUser.ID != uuid.Nil {
+	if exisitingOrg.ID != uuid.Nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"message": "Email already in use",
 			"status":  "error",
 		})
 	}
 
-	user := model.User{
+	org := model.Org{
 		Username: input.Username,
 		Email:    input.Email,
 		// Set other fields accordingly
 	}
 
-	errors := model.ValidateStruct(user)
+	errors := model.ValidateStruct(org)
 	if errors != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Validation Error",
@@ -146,9 +155,9 @@ func SignUpOrg(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "Internal Server Error", "message": err.Error()})
 	}
 
-	user.Password = string(hashedPassword)
+	org.Password = string(hashedPassword)
 
-	createdUser, err := userRepo.CreateUser(user)
+	createdOrg, err := orgRepo.CreateOrg(org)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Internal Server Error",
@@ -156,7 +165,7 @@ func SignUpOrg(c *fiber.Ctx) error {
 		})
 	}
 
-	response := userSchema.MapUserRecord(&createdUser)
+	response := orgSchema.MapOrgRecord(&createdOrg)
 
 	return c.Status(201).JSON(fiber.Map{
 		"message": "Created",
