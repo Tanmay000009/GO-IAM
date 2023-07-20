@@ -139,12 +139,17 @@ func LogoutUser(c *fiber.Ctx) error {
 
 func GetMe(c *fiber.Ctx) error {
 	if user, ok := c.Locals("user").(userSchema.UserResponse); ok {
-		// The value is not nil and has the correct type (userSchema.UserResponse)
+
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "data": fiber.Map{"user": user}})
 	}
 
+	if org, ok := c.Locals("org").(orgSchema.OrgResponse); ok {
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "data": fiber.Map{"org": org}})
+	}
+
 	// Handle the case when the value is nil or not of the correct type
-	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Invalid user data"})
+	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Invalid token"})
 }
 
 func SignUpOrg(c *fiber.Ctx) error {

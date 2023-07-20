@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type OrgReponse struct {
+type OrgResponse struct {
 	ID        uuid.UUID `json:"id,omitempty"`
 	Username  string    `json:"username,omitempty"`
 	Email     string    `json:"email,omitempty"`
@@ -28,8 +28,8 @@ type SignupInput struct {
 	ConfirmPassword string `json:"confirmPassword" validate:"required,min=8"`
 }
 
-func MapOrgRecord(user *model.Org) OrgReponse {
-	return OrgReponse{
+func MapOrgRecord(user *model.Org) OrgResponse {
+	return OrgResponse{
 		ID:        user.ID,
 		Username:  user.Username,
 		Email:     user.Email,
