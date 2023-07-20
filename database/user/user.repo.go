@@ -28,6 +28,15 @@ func FindUserByIdWithPassword(id string) (model.User, error) {
 	return user, err
 }
 
+func FindUserById(id uuid.UUID) (userSchema.UserResponse, error) {
+	var user model.User
+	db := database.DB
+	err := db.First(&user, "id = ?", id).Error
+	user_ := userSchema.MapUserRecord(&user)
+
+	return user_, err
+}
+
 func FindUserWithOrgById(id string) (userSchema.UserResponseWithOrg, error) {
 	var user model.User
 

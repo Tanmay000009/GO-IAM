@@ -175,31 +175,69 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 func UpdateUser(c *fiber.Ctx) error {
-
-	var user model.User
-
-	err := c.BodyParser(&user)
-
+	id_ := c.Params("id")
+	id, err := uuid.Parse(id_)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
+			"message": "Invalid ID",
+			"status":  "error",
+		})
+	}
+	var updatedUser model.User
+
+	err = c.BodyParser(&fiber.Map{
+		"username": updatedUser.Username,
+	})
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Bad Request",
 			"status":  "error",
 		})
 	}
 
-	updatedUser, err := userRepo.UpdateUser(user)
+	// Check if the user is an organization or the user themselves, or has the necessary permission
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
+	if !orgOK && !userOK && user.ID != updatedUser.ID && !HasAnyRole(user.Roles, roles.UserWriteAccess) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	// Fetch the existing user from the database
+	_, err = userRepo.FindUserById(id)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal Server Error",
 			"status":  "error",
 		})
 	}
 
-	return c.Status(200).JSON(fiber.Map{
+	// Validate the updated user data
+	errors := model.ValidateStruct(updatedUser)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	updatedUser_, err := userRepo.UpdateUser(updatedUser)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "OK",
 		"status":  "success",
-		"data":    updatedUser,
+		"data":    updatedUser_,
 	})
 }
 
