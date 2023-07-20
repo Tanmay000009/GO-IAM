@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetAllRoles() ([]roles.Role, error) {
+func GetAllRoles() ([]model.Role, error) {
 	db := database.DB
-	var roles []roles.Role
+	var roles []model.Role
 	err := db.Find(&roles).Error
 
 	return roles, err
@@ -24,9 +24,9 @@ func GetRoleById(id uuid.UUID) (roles.Role, error) {
 	return role, err
 }
 
-func GetRoleByName(name string) (roles.Role, error) {
+func GetRoleByName(name string) (model.Role, error) {
 	db := database.DB
-	var role roles.Role
+	var role model.Role
 	err := db.First(&role, "name = ?", name).Error
 
 	return role, err
