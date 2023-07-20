@@ -6,6 +6,7 @@ import (
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
+	userroles "balkantask/utils"
 	"fmt"
 	"os"
 	"time"
@@ -214,7 +215,7 @@ func SignUpOrg(c *fiber.Ctx) error {
 	}
 
 	org.Password = string(hashedPassword)
-	org.Roles = []string{"superuser"}
+	org.Roles = []userroles.Role{userroles.OrgFullAccess}
 	createdOrg, err := orgRepo.CreateOrg(org)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{

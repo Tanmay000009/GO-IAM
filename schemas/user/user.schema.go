@@ -2,6 +2,7 @@ package userSchema
 
 import (
 	"balkantask/model"
+	userroles "balkantask/utils"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,11 +15,11 @@ type CreateUser struct {
 }
 
 type UserResponse struct {
-	ID        uuid.UUID `json:"id,omitempty"`
-	Username  string    `json:"username,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Roles     []string  `json:"roles"`
+	ID        uuid.UUID        `json:"id,omitempty"`
+	Username  string           `json:"username,omitempty"`
+	CreatedAt time.Time        `json:"created_at"`
+	UpdatedAt time.Time        `json:"updated_at"`
+	Roles     []userroles.Role `json:"roles"`
 }
 
 func MapUserRecord(user *model.User) UserResponse {

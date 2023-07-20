@@ -5,6 +5,7 @@ import (
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
+	userroles "balkantask/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -124,7 +125,7 @@ func CreateUser(c *fiber.Ctx) error {
 
 	user.Password = string(hashedPassword)
 	user.OrgID = org.ID // Set the organization ID for the user
-	user.Roles = []string{"user"}
+	user.Roles = []userroles.Role{}
 	createdUser, err := userRepo.CreateUser(user)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
