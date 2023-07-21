@@ -4,6 +4,8 @@ import (
 	"balkantask/database"
 	"balkantask/model"
 	constants "balkantask/utils"
+
+	"github.com/google/uuid"
 )
 
 func FindOrgs() ([]model.Org, error) {
@@ -13,7 +15,7 @@ func FindOrgs() ([]model.Org, error) {
 	return orgs, err
 }
 
-func FindOrgById(id string) (model.Org, error) {
+func FindOrgById(id uuid.UUID) (model.Org, error) {
 	var org model.Org
 	db := database.DB
 	err := db.First(&org, "id = ?", id).Error

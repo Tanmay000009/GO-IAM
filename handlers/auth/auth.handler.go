@@ -7,6 +7,7 @@ import (
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
 	constants "balkantask/utils"
+	"balkantask/utils/roles"
 	"fmt"
 	"os"
 	"time"
@@ -253,5 +254,68 @@ func SignUpOrg(c *fiber.Ctx) error {
 		"message": "Created",
 		"status":  "success",
 		"data":    response,
+	})
+}
+
+func DeleteAccount(c *fiber.Ctx) error {
+	id_ := c.Params("id")
+	id, err := uuid.Parse(id_)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"message": "Invalid ID",
+			"status":  "error",
+		})
+	}
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	userLoggedIn, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(userLoggedIn.Roles, []roles.Role{roles.OrgFullAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	orgToDeactivate, err := orgRepo.FindOrgById(id)
+
+	if orgToDeactivate.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Account is deleted",
+			"status":  "error",
+		})
+	}
+
+	if orgToDeactivate.ID == uuid.Nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Account Not Found",
+			"status":  "false",
+		})
+	}
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Account Not Found",
+			"status":  "false",
+		})
+	}
+
+	// Perform the user deactivation logic here
+	// ...
+
+	// Update the user with the new account status
+	orgToDeactivate.AccountStatus = constants.DEACTIVATED
+	updatedOrg, err := orgRepo.UpdateOrg(orgToDeactivate)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Account deletion initiated. Your account is under review, and will be marked as deleted in 5 days. Your data will be deleted after 45 days.",
+		"status":  "success",
+		"data":    updatedOrg,
 	})
 }

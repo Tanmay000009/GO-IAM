@@ -557,7 +557,7 @@ func DeactivateUser(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "User deactivated successfully",
+		"message": "User deactivated successfully. User can be reactivated. User data will be deleted after 30 days.",
 		"status":  "success",
 		"data":    updatedUser,
 	})
