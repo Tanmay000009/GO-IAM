@@ -5,7 +5,7 @@ import (
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
-	roles "balkantask/utils"
+	"balkantask/utils/roles"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"

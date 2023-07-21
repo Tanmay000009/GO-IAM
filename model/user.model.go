@@ -1,6 +1,7 @@
 package model
 
 import (
+	constants "balkantask/utils"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -9,13 +10,14 @@ import (
 
 type User struct {
 	BaseModel
-	Username  string     `gorm:"type:varchar(100);not null; uniqueIndex"`
-	Password  string     `gorm:"type:varchar(100);not null"`
-	OrgID     uuid.UUID  `gorm:"type:uuid;"`
-	Roles     []Role     `gorm:"many2many:user_roles;"`
-	Org       *Org       `gorm:"foreignKey:OrgID"`
-	CreatedAt *time.Time `gorm:"not null;default:now()"`
-	UpdatedAt *time.Time `gorm:"not null;default:now()"`
+	Username      string                  `gorm:"type:varchar(100);not null; uniqueIndex"`
+	Password      string                  `gorm:"type:varchar(100);not null"`
+	OrgID         uuid.UUID               `gorm:"type:uuid;"`
+	Roles         []Role                  `gorm:"many2many:user_roles;"`
+	Org           *Org                    `gorm:"foreignKey:OrgID"`
+	AccountStatus constants.AccountStatus `gorm:"type:varchar(100);not null;default:'active'"`
+	CreatedAt     *time.Time              `gorm:"not null;default:now()"`
+	UpdatedAt     *time.Time              `gorm:"not null;default:now()"`
 }
 
 var validate = validator.New()

@@ -3,7 +3,7 @@ package rolesRepo
 import (
 	"balkantask/database"
 	"balkantask/model"
-	roles "balkantask/utils"
+	"balkantask/utils/roles"
 
 	"github.com/google/uuid"
 )
