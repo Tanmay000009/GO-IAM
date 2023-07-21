@@ -92,6 +92,7 @@ func MapUserRecordWithOrg(user *model.User) UserResponseWithOrg {
 }
 
 type SignInInput struct {
-	Username string `json:"username"  validate:"required"`
-	Password string `json:"password"  validate:"required"`
+	Username  string `json:"username"  validate:"required"`
+	Password  string `json:"password"  validate:"required"`
+	AccountId string `json:"accountId"  validate:"required"`
 }

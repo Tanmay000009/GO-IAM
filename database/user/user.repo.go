@@ -69,6 +69,13 @@ func FindUserByUsernameWithPassword(username string) (model.User, error) {
 	return user, err
 }
 
+func FindUserByOrgAndUsernameWithPassword(username string, orgId string) (model.User, error) {
+	var user model.User
+	db := database.DB
+	err := db.Preload("Roles").Where("username = ? AND org_id = ?", username, orgId).First(&user).Error
+	return user, err
+}
+
 func FindUserByUsername(username string) (*model.User, error) {
 	var user *model.User
 	db := database.DB

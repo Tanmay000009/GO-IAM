@@ -36,7 +36,7 @@ func SignInUser(c *fiber.Ctx) error {
 	}
 
 	var user model.User
-	user, err := userRepo.FindUserByUsernameWithPassword(strings.ToLower(payload.Username))
+	user, err := userRepo.FindUserByOrgAndUsernameWithPassword(strings.ToLower(payload.Username), payload.AccountId)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid username or Password"})
 	}
