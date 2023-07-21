@@ -117,7 +117,7 @@ func DeleteRole(c *fiber.Ctx) error {
 		})
 	}
 
-	err = rolesRepo.DeleteRoleById(id)
+	err = rolesRepo.DeleteRole(&roleExists)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",

@@ -3,7 +3,6 @@ package rolesRepo
 import (
 	"balkantask/database"
 	"balkantask/model"
-	"balkantask/utils/roles"
 
 	"github.com/google/uuid"
 )
@@ -46,12 +45,10 @@ func CreateRole(role model.Role) (model.Role, error) {
 	return role, err
 }
 
-func DeleteRoleById(id uuid.UUID) error {
+func DeleteRole(role *model.Role) error {
 	db := database.DB
 
-	var role roles.Role
-	err := db.First(&role, "id = ?", id).Error
-	err = db.Model(&role).Association("Users").Clear()
+	err := db.Model(&role).Association("Users").Clear()
 	err = db.Model(&role).Association("Groups").Clear()
 	err = db.Delete(&role).Error
 	return err
