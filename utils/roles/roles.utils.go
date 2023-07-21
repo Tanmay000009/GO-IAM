@@ -29,3 +29,14 @@ func HasAnyRole(roles []model.Role, targetRoles []Role) bool {
 	}
 	return false
 }
+
+func HasAnyGroup(groups []model.Group, targetGroups []model.Group) bool {
+	for _, targetGroup := range targetGroups {
+		for _, group := range groups {
+			if group.ID == targetGroup.ID {
+				return true
+			}
+		}
+	}
+	return false
+}

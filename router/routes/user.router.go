@@ -19,6 +19,8 @@ func SetupUserRoutes(router fiber.Router) {
 	userRouter.Delete("/:id", userHandler.DeleteUser)
 	userRouter.Post("/role/add", userHandler.AddRoleToUser)
 	userRouter.Delete("/role/remove", userHandler.DeleteRoleFromUser)
+	userRouter.Post("/group/add", userHandler.AddGroupToUser)
+	userRouter.Delete("/group/remove", userHandler.DeleteGroupFromUser)
 	userRouter.Put("/deactivate/:id", userHandler.DeactivateUser)
 	userRouter.Put("/reactivate/:id", userHandler.ReactivateUser)
 	userRouter.Put("/update/password", userHandler.ChangePassword)

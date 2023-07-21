@@ -21,6 +21,7 @@ type UserResponse struct {
 	CreatedAt     time.Time               `json:"created_at"`
 	UpdatedAt     time.Time               `json:"updated_at"`
 	Roles         []model.Role            `json:"roles"`
+	Groups        []model.Group           `json:"groups"`
 	OrgId         uuid.UUID               `json:"org_id,omitempty"`
 	AccountStatus constants.AccountStatus `json:"account_status,omitempty"`
 }
@@ -31,6 +32,7 @@ type UserResponseWithOrg struct {
 	CreatedAt     time.Time               `json:"created_at"`
 	UpdatedAt     time.Time               `json:"updated_at"`
 	Roles         []model.Role            `json:"roles"`
+	Groups        []model.Group           `json:"groups"`
 	OrgId         uuid.UUID               `json:"org_id,omitempty"`
 	Org           orgSchema.OrgResponse   `json:"org,omitempty"`
 	AccountStatus constants.AccountStatus `json:"account_status,omitempty"`
@@ -42,14 +44,20 @@ type CreateUserResponse struct {
 	CreatedAt     time.Time               `json:"created_at"`
 	UpdatedAt     time.Time               `json:"updated_at"`
 	Roles         []model.Role            `json:"roles"`
+	Groups        []model.Group           `json:"groups"`
 	OrgId         uuid.UUID               `json:"org_id,omitempty"`
 	AccountStatus constants.AccountStatus `json:"account_status,omitempty"`
 	Passcode      string                  `json:"passcode,omitempty"`
 }
 
 type AddOrDeleteRole struct {
-	RoleId uuid.UUID `json:"role_id" validate:"required"`
-	UserId uuid.UUID `json:"user_id" validate:"required"`
+	RoleId uuid.UUID `json:"roleId" validate:"required"`
+	UserId uuid.UUID `json:"userId" validate:"required"`
+}
+
+type AddOrDeleteGroup struct {
+	GroupId uuid.UUID `json:"groupId" validate:"required"`
+	UserId  uuid.UUID `json:"userId" validate:"required"`
 }
 
 type UpdatePassword struct {
@@ -73,6 +81,7 @@ func MapUserRecord(user *model.User) UserResponse {
 		CreatedAt:     *user.CreatedAt,
 		UpdatedAt:     *user.UpdatedAt,
 		Roles:         user.Roles,
+		Groups:        user.Groups,
 		OrgId:         user.OrgID,
 		AccountStatus: user.AccountStatus,
 	}

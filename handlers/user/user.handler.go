@@ -1,6 +1,7 @@
 package userHandler
 
 import (
+	groupRepo "balkantask/database/group"
 	rolesRepo "balkantask/database/roles"
 	userRepo "balkantask/database/user"
 	"balkantask/model"
@@ -902,6 +903,159 @@ func ChangePassword(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Password updated successfully",
+		"status":  "success",
+		"data":    updatedUser,
+	})
+}
+
+func AddGroupToUser(c *fiber.Ctx) error {
+	var input userSchema.AddOrDeleteGroup
+	err := c.BodyParser(&input)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Bad Request",
+			"status":  "error",
+		})
+	}
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	errors := model.ValidateStruct(input)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	user_, err := userRepo.FindUserByIdWithPassword(input.UserId)
+
+	if user_.AccountStatus == constants.DEACTIVATED || user_.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Account is deactivated",
+			"status":  "error",
+		})
+	}
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	group, err := groupRepo.GetGroupById(input.GroupId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Group doesn't exist",
+			"status":  "error",
+		})
+	}
+
+	// Check if the user already has the group
+	if roles.HasAnyGroup(user_.Groups, []model.Group{group}) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "User already has the group",
+			"status":  "error",
+		})
+	}
+
+	user_, err = userRepo.AddGroupToUser(group, user_)
+	if err != nil {
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	mappedUser := userSchema.MapUserRecord(&user_)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Group added to user",
+		"status":  "success",
+		"data":    mappedUser,
+	})
+}
+
+func DeleteGroupFromUser(c *fiber.Ctx) error {
+	var input userSchema.AddOrDeleteGroup
+	err := c.BodyParser(&input)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Bad Request",
+			"status":  "error",
+		})
+	}
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	errors := model.ValidateStruct(input)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	user_, err := userRepo.FindUserByIdWithPassword(input.UserId)
+	if user_.AccountStatus == constants.DEACTIVATED || user_.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Account is deactivated",
+			"status":  "error",
+		})
+	}
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	group, err := groupRepo.GetGroupById(input.GroupId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Group doesn't exist",
+			"status":  "error",
+		})
+	}
+
+	// Check if the user has the group
+	if !roles.HasAnyGroup(user_.Groups, []model.Group{group}) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "User does not have the group",
+			"status":  "error",
+		})
+	}
+
+	updatedUser, err := userRepo.DeleteGroupFromUser(group, user_)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Group removed from user",
 		"status":  "success",
 		"data":    updatedUser,
 	})
