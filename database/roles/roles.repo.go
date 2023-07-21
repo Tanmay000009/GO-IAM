@@ -24,6 +24,13 @@ func GetRoleById(id uuid.UUID) (model.Role, error) {
 	return role, err
 }
 
+func GetRolesByIds(ids []uuid.UUID) ([]model.Role, error) {
+	db := database.DB
+	var roles []model.Role
+	err := db.Find(&roles, "id IN ?", ids).Error
+	return roles, err
+}
+
 func GetRoleByName(name string) (model.Role, error) {
 	db := database.DB
 	var role model.Role
@@ -43,7 +50,9 @@ func DeleteRoleById(id uuid.UUID) error {
 	db := database.DB
 
 	var role roles.Role
-	err := db.Delete(&role, "id = ?", id).Error
-
+	err := db.First(&role, "id = ?", id).Error
+	err = db.Model(&role).Association("Users").Clear()
+	err = db.Model(&role).Association("Groups").Clear()
+	err = db.Delete(&role).Error
 	return err
 }

@@ -5,15 +5,18 @@ import "balkantask/model"
 type Role string
 
 const (
-	OrgFullAccess   Role = "ORG_FULL_ACCESS"
-	UserFullAccess  Role = "USER_FULL_ACCESS"
-	UserWriteAccess Role = "USER_WRITE_ACCESS"
-	UserReadAccess  Role = "USER_READ_ACCESS"
-	RoleFullAccess  Role = "ROLE_FULL_ACCESS"
-	RoleWriteAccess Role = "ROLE_WRITE_ACCESS"
-	RoleReadAccess  Role = "ROLE_READ_ACCESS"
-	OrgWriteAccess  Role = "ORG_WRITE_ACCESS"
-	OrgReadAccess   Role = "ORG_READ_ACCESS"
+	OrgFullAccess    Role = "ORG_FULL_ACCESS"
+	UserFullAccess   Role = "USER_FULL_ACCESS"
+	UserWriteAccess  Role = "USER_WRITE_ACCESS"
+	UserReadAccess   Role = "USER_READ_ACCESS"
+	RoleFullAccess   Role = "ROLE_FULL_ACCESS"
+	RoleWriteAccess  Role = "ROLE_WRITE_ACCESS"
+	RoleReadAccess   Role = "ROLE_READ_ACCESS"
+	OrgWriteAccess   Role = "ORG_WRITE_ACCESS"
+	OrgReadAccess    Role = "ORG_READ_ACCESS"
+	GroupReadAccess  Role = "GROUP_READ_ACCESS"
+	GroupWriteAccess Role = "GROUP_WRITE_ACCESS"
+	GroupFullAccess  Role = "GROUP_FULL_ACCESS"
 )
 
 func HasAnyRole(roles []model.Role, targetRoles []Role) bool {
