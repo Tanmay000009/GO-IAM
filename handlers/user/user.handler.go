@@ -12,6 +12,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/sethvargo/go-password/password"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -152,6 +153,24 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
+	if input.Password != input.PasswordConfirm {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Passwords do not match",
+			"status":  "error",
+		})
+	}
+
+	// If password is not provided, generate a random password
+	if input.Password == "" {
+		input.Password, err = password.Generate(10, 4, 2, true, true)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Internal Server Error",
+				"status":  "error",
+			})
+		}
+	}
+
 	// Create the new user
 	newUser := model.User{
 		Username: input.Username,
@@ -188,11 +207,22 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
+	resData := userSchema.CreateUserResponse{
+		ID:            createdUser.ID,
+		Username:      createdUser.Username,
+		CreatedAt:     createdUser.CreatedAt,
+		UpdatedAt:     createdUser.UpdatedAt,
+		Roles:         createdUser.Roles,
+		OrgId:         createdUser.OrgId,
+		AccountStatus: createdUser.AccountStatus,
+		Passcode:      input.Password,
+	}
+
 	// Return the created user data
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Created",
 		"status":  "success",
-		"data":    createdUser,
+		"data":    resData,
 	})
 }
 

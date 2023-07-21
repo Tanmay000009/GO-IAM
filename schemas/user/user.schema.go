@@ -11,8 +11,8 @@ import (
 
 type CreateUser struct {
 	Username        string `json:"username" validate:"required"`
-	Password        string `json:"password" validate:"required,min=8"`
-	PasswordConfirm string `json:"passwordConfirm" validate:"required,min=8"`
+	Password        string `json:"password,omitempty" validate:"omitempty,min=8"`
+	PasswordConfirm string `json:"passwordConfirm,omitempty" validate:"omitempty,min=8"`
 }
 
 type UserResponse struct {
@@ -34,6 +34,17 @@ type UserResponseWithOrg struct {
 	OrgId         uuid.UUID               `json:"org_id,omitempty"`
 	Org           orgSchema.OrgResponse   `json:"org,omitempty"`
 	AccountStatus constants.AccountStatus `json:"account_status,omitempty"`
+}
+
+type CreateUserResponse struct {
+	ID            uuid.UUID               `json:"id,omitempty"`
+	Username      string                  `json:"username,omitempty"`
+	CreatedAt     time.Time               `json:"created_at"`
+	UpdatedAt     time.Time               `json:"updated_at"`
+	Roles         []model.Role            `json:"roles"`
+	OrgId         uuid.UUID               `json:"org_id,omitempty"`
+	AccountStatus constants.AccountStatus `json:"account_status,omitempty"`
+	Passcode      string                  `json:"passcode,omitempty"`
 }
 
 type AddOrDeleteRole struct {
