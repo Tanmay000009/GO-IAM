@@ -43,7 +43,7 @@ func FindUserWithOrgById(id string) (userSchema.UserResponseWithOrg, error) {
 	db := database.DB
 
 	// Perform a left join on orgs table using Preload
-	err := db.Preload("Org").First(&user, "id = ?", id).Error
+	err := db.Preload("Roles").Preload("Org").First(&user, "id = ?", id).Error
 
 	userWithOrg := userSchema.MapUserRecordWithOrg(&user)
 
@@ -66,7 +66,7 @@ func FindUserWithOrgByUsername(username string) (userSchema.UserResponseWithOrg,
 func FindUserByUsernameWithPassword(username string) (model.User, error) {
 	var user model.User
 	db := database.DB
-	err := db.First(&user, "username = ?", username).Error
+	err := db.Preload("Roles").First(&user, "username = ?", username).Error
 	return user, err
 }
 
@@ -81,7 +81,7 @@ func FindUserByUsername(username string) (*model.User, error) {
 func FindUsersByOrgId(orgId uuid.UUID) ([]userSchema.UserResponse, error) {
 	var users []model.User
 	db := database.DB
-	err := db.Find(&users, "org_id = ?", orgId).Error
+	err := db.Preload("Roles").Find(&users, "org_id = ?", orgId).Error
 
 	var users_ []userSchema.UserResponse
 	for _, user := range users {
