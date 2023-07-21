@@ -393,9 +393,9 @@ func DeleteRoleFromUser(c *fiber.Ctx) error {
 
 	user_, err := userRepo.FindUserByIdWithPassword(input.UserId)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Internal Server Error",
-			"status":  "error",
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
 		})
 	}
 
