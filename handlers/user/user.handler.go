@@ -157,7 +157,7 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	if input.Password != input.PasswordConfirm {
+	if input.Password != input.ConfirmPassword {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Passwords do not match",
 			"status":  "error",
@@ -451,10 +451,12 @@ func AddRoleToUser(c *fiber.Ctx) error {
 		})
 	}
 
+	mappedUser := userSchema.MapUserRecord(&user_)
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Role added to user",
 		"status":  "success",
-		"data":    user_,
+		"data":    mappedUser,
 	})
 }
 

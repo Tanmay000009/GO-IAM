@@ -12,7 +12,7 @@ import (
 type CreateUser struct {
 	Username        string `json:"username" validate:"required"`
 	Password        string `json:"password,omitempty" validate:"omitempty,min=8"`
-	PasswordConfirm string `json:"passwordConfirm,omitempty" validate:"omitempty,min=8"`
+	ConfirmPassword string `json:"confirmPassword,omitempty" validate:"omitempty,min=8"`
 }
 
 type UserResponse struct {
