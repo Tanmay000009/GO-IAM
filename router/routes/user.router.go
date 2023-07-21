@@ -14,6 +14,7 @@ func SetupUserRoutes(router fiber.Router) {
 	userRouter.Get("/", userHandler.GetUsers)
 	userRouter.Get("/:id", userHandler.GetUserById)
 	userRouter.Post("/", userHandler.CreateUser)
+	userRouter.Post("/seed", userHandler.SeedUsersFromExcel)
 	userRouter.Put("/:id", userHandler.UpdateUser)
 	userRouter.Delete("/:id", userHandler.DeleteUser)
 	userRouter.Post("/role/add", userHandler.AddRoleToUser)
