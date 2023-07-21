@@ -2,6 +2,7 @@ package orgSchema
 
 import (
 	"balkantask/model"
+	constants "balkantask/utils"
 	"regexp"
 	"time"
 
@@ -9,11 +10,12 @@ import (
 )
 
 type OrgResponse struct {
-	ID        uuid.UUID `json:"id,omitempty"`
-	Username  string    `json:"username,omitempty"`
-	Email     string    `json:"email,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID            uuid.UUID               `json:"id,omitempty"`
+	Username      string                  `json:"username,omitempty"`
+	Email         string                  `json:"email,omitempty"`
+	AccountStatus constants.AccountStatus `json:"account_status,omitempty"`
+	CreatedAt     time.Time               `json:"created_at"`
+	UpdatedAt     time.Time               `json:"updated_at"`
 }
 type SignInInput struct {
 	Email    string `json:"email"  validate:"required"`
@@ -29,11 +31,12 @@ type SignupInput struct {
 
 func MapOrgRecord(user *model.Org) OrgResponse {
 	return OrgResponse{
-		ID:        user.ID,
-		Username:  user.Username,
-		Email:     user.Email,
-		CreatedAt: *user.CreatedAt,
-		UpdatedAt: *user.UpdatedAt,
+		ID:            user.ID,
+		Username:      user.Username,
+		Email:         user.Email,
+		CreatedAt:     *user.CreatedAt,
+		UpdatedAt:     *user.UpdatedAt,
+		AccountStatus: user.AccountStatus,
 	}
 }
 

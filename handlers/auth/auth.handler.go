@@ -6,6 +6,7 @@ import (
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
+	constants "balkantask/utils"
 	"fmt"
 	"os"
 	"time"
@@ -35,12 +36,20 @@ func SignInUser(c *fiber.Ctx) error {
 	var user model.User
 	user, err := userRepo.FindUserByUsernameWithPassword(strings.ToLower(payload.Username))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid email or Password"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid username or Password"})
+	}
+
+	if user.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid username or Password"})
+	}
+
+	if user.AccountStatus == constants.DEACTIVATED {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Account deactivated. Contact your admin"})
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid email or Password"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid username or Password"})
 	}
 
 	// Create a new JWT token with a custom expiration time
@@ -57,7 +66,7 @@ func SignInUser(c *fiber.Ctx) error {
 	config := os.Getenv("JWT_SECRET")
 	tokenString, err := tokenByte.SignedString([]byte(config))
 	if err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "false", "message": fmt.Sprintf("generating JWT Token failed: %v", err)})
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "false", "message": "Internal Server Error"})
 	}
 
 	c.Cookie(&fiber.Cookie{

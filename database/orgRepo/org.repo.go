@@ -3,12 +3,13 @@ package orgrepository
 import (
 	"balkantask/database"
 	"balkantask/model"
+	constants "balkantask/utils"
 )
 
 func FindOrgs() ([]model.Org, error) {
 	var orgs []model.Org
 	db := database.DB
-	err := db.Find(&orgs).Error
+	err := db.Find(&orgs).Where("account_status != ?", constants.DELETED).Error
 	return orgs, err
 }
 
