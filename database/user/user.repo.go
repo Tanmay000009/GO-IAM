@@ -65,7 +65,7 @@ func FindUserWithOrgByUsername(username string) (userSchema.UserResponseWithOrg,
 func FindUserByUsernameWithPassword(username string) (model.User, error) {
 	var user model.User
 	db := database.DB
-	err := db.Preload("Roles").First(&user).Where("account_status != ? AND username = ?", constants.DELETED, username).Error
+	err := db.Preload("Roles").First(&user).Where("username = ?", username).Error
 	return user, err
 }
 
