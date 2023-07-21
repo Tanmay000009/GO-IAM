@@ -71,16 +71,6 @@ func SignInUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "false", "message": "Internal Server Error"})
 	}
 
-	c.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Value:    tokenString,
-		Path:     "/",
-		MaxAge:   86400, // Token will expire in 24 hours (in seconds)
-		Secure:   false,
-		HTTPOnly: true,
-		Domain:   "localhost",
-	})
-
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "token": tokenString})
 }
 
@@ -133,27 +123,7 @@ func SignInOrg(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "false", "message": fmt.Sprintf("generating JWT Token failed: %v", err)})
 	}
 
-	c.Cookie(&fiber.Cookie{
-		Name:     "token",
-		Value:    tokenString,
-		Path:     "/",
-		MaxAge:   86400, // Token will expire in 24 hours (in seconds)
-		Secure:   false,
-		HTTPOnly: true,
-		Domain:   "localhost",
-	})
-
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "token": tokenString})
-}
-
-func LogoutUser(c *fiber.Ctx) error {
-	expired := time.Now().Add(-time.Hour * 24)
-	c.Cookie(&fiber.Cookie{
-		Name:    "token",
-		Value:   "",
-		Expires: expired,
-	})
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success"})
 }
 
 func GetMe(c *fiber.Ctx) error {
