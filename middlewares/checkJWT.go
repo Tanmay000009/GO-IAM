@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	orgRepo "balkantask/database/orgRepo"
+	orgrepository "balkantask/database/org"
 	userRepo "balkantask/database/user"
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
@@ -58,7 +58,7 @@ func CheckJWT(c *fiber.Ctx) error {
 	}
 
 	user, err := userRepo.FindUserByIdWithPassword(id_uuid)
-	org, orgErr := orgRepo.FindOrgById(id_uuid)
+	org, orgErr := orgrepository.FindOrgById(id_uuid)
 	if err != nil && orgErr != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid token"})
 	}

@@ -1,7 +1,7 @@
 package authHandler
 
 import (
-	orgRepo "balkantask/database/orgRepo"
+	orgRepo "balkantask/database/org"
 	userRepo "balkantask/database/user"
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
