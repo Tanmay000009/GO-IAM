@@ -63,7 +63,7 @@ func CheckJWT(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid token"})
 	}
 
-	if user.Org.AccountStatus == constants.DELETED || org.AccountStatus == constants.DELETED {
+	if (user.Org != nil && user.Org.AccountStatus == constants.DELETED) || org.AccountStatus == constants.DELETED {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "false", "message": "Account does not exist"})
 	}
 
