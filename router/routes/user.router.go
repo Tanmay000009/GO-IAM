@@ -17,4 +17,5 @@ func SetupUserRoutes(router fiber.Router) {
 	userRouter.Put("/:id", userHandler.UpdateUser)
 	userRouter.Delete("/:id", userHandler.DeleteUser)
 	userRouter.Post("/role/add", userHandler.AddRoleToUser)
+	userRouter.Delete("/role/remove", userHandler.DeleteRoleFromUser)
 }

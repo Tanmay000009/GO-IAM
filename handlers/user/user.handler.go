@@ -7,10 +7,12 @@ import (
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
 	roles "balkantask/utils"
+	"errors"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func GetUsers(c *fiber.Ctx) error {
@@ -127,6 +129,24 @@ func CreateUser(c *fiber.Ctx) error {
 		// If neither org nor user is present or not of the correct type, or the user doesn't have the necessary permission, return an error
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	exisitingUser, err := userRepo.FindUserByUsername(input.Username)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(500).JSON(fiber.Map{
+				"message": "Internal Server Error",
+				"status":  "error",
+			})
+		}
+	}
+
+	// Check the existence of the user.
+	if exisitingUser.ID != uuid.Nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"message": "Username already in use",
 			"status":  "error",
 		})
 	}
@@ -272,7 +292,78 @@ func DeleteUser(c *fiber.Ctx) error {
 }
 
 func AddRoleToUser(c *fiber.Ctx) error {
-	var input userSchema.AddRoleToUser
+	var input userSchema.AddOrDeleteRole
+	err := c.BodyParser(&input)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Bad Request",
+			"status":  "error",
+		})
+	}
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	errors := model.ValidateStruct(input)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	user_, err := userRepo.FindUserByIdWithPassword(input.UserId)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	role, err := rolesRepo.GetRoleById(input.RoleId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Role doesn't exist",
+			"status":  "error",
+		})
+	}
+
+	// Check if the user already has the role
+	if roles.HasAnyRole(user_.Roles, []roles.Role{roles.Role(role.Name)}) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "User already has the role",
+			"status":  "error",
+		})
+	}
+
+	user_, err = userRepo.AddRoleToUser(role, user_)
+
+	// updatedUser, err := userRepo.UpdateUser(user_)
+	if err != nil {
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Role added to user",
+		"status":  "success",
+		"data":    user_,
+	})
+}
+
+func DeleteRoleFromUser(c *fiber.Ctx) error {
+	var input userSchema.AddOrDeleteRole
 	err := c.BodyParser(&input)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -316,17 +407,15 @@ func AddRoleToUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if the user already has the role
-	if roles.HasAnyRole(user_.Roles, []roles.Role{roles.Role(role.Name)}) {
+	// Check if the user has the role
+	if !roles.HasAnyRole(user_.Roles, []roles.Role{roles.Role(role.Name)}) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "User already has the role",
+			"message": "User does not have the role",
 			"status":  "error",
 		})
 	}
 
-	user_.Roles = append(user_.Roles, role)
-
-	updatedUser, err := userRepo.UpdateUser(user_)
+	updatedUser, err := userRepo.DeleteRoleFromUser(role, user_)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal Server Error",
@@ -335,7 +424,7 @@ func AddRoleToUser(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Role added to user",
+		"message": "Role removed from user",
 		"status":  "success",
 		"data":    updatedUser,
 	})

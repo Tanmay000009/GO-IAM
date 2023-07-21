@@ -31,7 +31,7 @@ func FindUserByIdWithPassword(id uuid.UUID) (model.User, error) {
 func FindUserById(id uuid.UUID) (userSchema.UserResponse, error) {
 	var user model.User
 	db := database.DB
-	err := db.First(&user, "id = ?", id).Error
+	err := db.Preload("Roles").First(&user, "id = ?", id).Error
 	user_ := userSchema.MapUserRecord(&user)
 
 	return user_, err
@@ -56,7 +56,7 @@ func FindUserWithOrgByUsername(username string) (userSchema.UserResponseWithOrg,
 	db := database.DB
 
 	// Perform a left join on orgs table using Preload
-	err := db.Preload("Org").First(&user, "username = ?", username).Error
+	err := db.Preload("Roles").Preload("Org").First(&user, "username = ?", username).Error
 
 	userWithOrg := userSchema.MapUserRecordWithOrg(&user)
 
@@ -70,13 +70,12 @@ func FindUserByUsernameWithPassword(username string) (model.User, error) {
 	return user, err
 }
 
-func FindUserByUsername(username string) (userSchema.UserResponse, error) {
-	var user model.User
+func FindUserByUsername(username string) (*model.User, error) {
+	var user *model.User
 	db := database.DB
 	err := db.First(&user, "username = ?", username).Error
-	user_ := userSchema.MapUserRecord(&user)
 
-	return user_, err
+	return user, err
 }
 
 func FindUsersByOrgId(orgId uuid.UUID) ([]userSchema.UserResponse, error) {
@@ -126,4 +125,16 @@ func DeleteUser(user model.User) (bool, error) {
 	err := db.Delete(&user).Error
 
 	return true, err
+}
+
+func AddRoleToUser(role model.Role, user model.User) (model.User, error) {
+	db := database.DB
+	err := db.Model(&user).Association("Roles").Append(&role)
+	return user, err
+}
+
+func DeleteRoleFromUser(role model.Role, user model.User) (model.User, error) {
+	db := database.DB
+	err := db.Model(&user).Association("Roles").Delete(&role)
+	return user, err
 }
