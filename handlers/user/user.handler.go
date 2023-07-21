@@ -6,6 +6,7 @@ import (
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
+	constants "balkantask/utils"
 	"balkantask/utils/roles"
 	"errors"
 
@@ -229,10 +230,24 @@ func UpdateUser(c *fiber.Ctx) error {
 	}
 
 	// Fetch the existing user from the database
-	_, err = userRepo.FindUserById(id)
+	existingUser, err := userRepo.FindUserById(id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	if existingUser.AccountStatus == constants.DEACTIVATED || existingUser.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Account is deactivated",
+			"status":  "error",
+		})
+	}
+
+	if existingUser.ID == uuid.Nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
 			"status":  "error",
 		})
 	}
@@ -321,6 +336,14 @@ func AddRoleToUser(c *fiber.Ctx) error {
 	}
 
 	user_, err := userRepo.FindUserByIdWithPassword(input.UserId)
+
+	if user_.AccountStatus == constants.DEACTIVATED || user_.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Account is deactivated",
+			"status":  "error",
+		})
+	}
+
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "User Not Found",
@@ -392,6 +415,12 @@ func DeleteRoleFromUser(c *fiber.Ctx) error {
 	}
 
 	user_, err := userRepo.FindUserByIdWithPassword(input.UserId)
+	if user_.AccountStatus == constants.DEACTIVATED || user_.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Account is deactivated",
+			"status":  "error",
+		})
+	}
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "User Not Found",
