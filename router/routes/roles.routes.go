@@ -8,7 +8,7 @@ import (
 )
 
 func SetupRolesRoutes(router fiber.Router) {
-	roles := router.Group("/roles", middleware.CheckJWT)
+	roles := router.Group("/roles")
 
 	roles.Get("/", rolesHandler.GetAllRoles)
 	roles.Get("/:id", rolesHandler.GetRoleById)
