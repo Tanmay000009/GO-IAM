@@ -174,7 +174,7 @@ func SignUpOrg(c *fiber.Ctx) error {
 		})
 	}
 
-	if exisitingOrg.AccountStatus != constants.DELETED {
+	if exisitingOrg.AccountStatus == constants.DELETED {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"message": "Email cannot be used. Contact support.",
 			"status":  "error",
