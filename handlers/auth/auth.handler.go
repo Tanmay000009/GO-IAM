@@ -101,6 +101,14 @@ func SignInOrg(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid email or Password"})
 	}
 
+	if org.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid email or Password"})
+	}
+
+	if org.AccountStatus == constants.DEACTIVATED {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Account deactivated. Contact support."})
+	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(org.Password), []byte(payload.Password))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid email or Password"})
@@ -190,6 +198,13 @@ func SignUpOrg(c *fiber.Ctx) error {
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	if exisitingOrg.AccountStatus != constants.DELETED {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"message": "Email cannot be used. Contact support.",
 			"status":  "error",
 		})
 	}
