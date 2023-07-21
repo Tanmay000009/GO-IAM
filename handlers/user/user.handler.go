@@ -602,6 +602,65 @@ func DeactivateUser(c *fiber.Ctx) error {
 	})
 }
 
+func ReactivateUser(c *fiber.Ctx) error {
+	id_ := c.Params("id")
+	id, err := uuid.Parse(id_)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid ID",
+			"status":  "error",
+		})
+	}
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	userLoggedIn, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(userLoggedIn.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	userToReactivate, err := userRepo.FindUserByIdWithPassword(id)
+
+	if userToReactivate.AccountStatus != constants.DEACTIVATED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "User Account is already activated",
+			"status":  "error",
+		})
+	}
+
+	if userToReactivate.ID == uuid.Nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	userToReactivate.AccountStatus = constants.ACTIVATED
+	updatedUser, err := userRepo.UpdateUser(userToReactivate)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "User reactivated successfully.",
+		"status":  "success",
+		"data":    updatedUser,
+	})
+}
+
 func SeedUsersFromExcel(c *fiber.Ctx) error {
 	file, err := c.FormFile("file")
 	if err != nil {
