@@ -129,6 +129,7 @@ func UpdateUser(user model.User) (userSchema.UserResponse, error) {
 func DeleteUser(user model.User) (bool, error) {
 	db := database.DB
 	err := db.Model(&user).Association("Roles").Clear()
+	err = db.Model(&user).Association("Groups").Clear()
 	err = db.Delete(&user).Error
 
 	return true, err

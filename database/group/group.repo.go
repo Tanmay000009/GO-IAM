@@ -30,6 +30,7 @@ func CreateGroup(group *model.Group) (*model.Group, error) {
 func DeleteGroup(group *model.Group) error {
 	db := database.DB
 	err := db.Model(&group).Association("Roles").Clear()
+	err = db.Model(&group).Association("Users").Clear()
 	err = db.Delete(&group).Error
 	return err
 }
