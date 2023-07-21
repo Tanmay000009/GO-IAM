@@ -5,6 +5,7 @@ import (
 	userRepo "balkantask/database/user"
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
+	constants "balkantask/utils"
 
 	"fmt"
 	"os"
@@ -60,6 +61,14 @@ func CheckJWT(c *fiber.Ctx) error {
 	org, orgErr := orgRepo.FindOrgById(fmt.Sprint(claims["sub"]))
 	if err != nil && orgErr != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "false", "message": "Invalid token"})
+	}
+
+	if user.AccountStatus == constants.DELETED || org.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "false", "message": "Account does not exist"})
+	}
+
+	if user.AccountStatus == constants.DEACTIVATED || org.AccountStatus == constants.DEACTIVATED {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "false", "message": "Account deactivated"})
 	}
 
 	if user.ID.String() == claims["sub"] {
