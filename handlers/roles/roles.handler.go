@@ -90,12 +90,14 @@ func CreateRole(c *fiber.Ctx) error {
 }
 
 func DeleteRole(c *fiber.Ctx) error {
-	var role model.Role
-
-	if err := c.BodyParser(&role); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": err.Error()})
+	id_ := c.Params("id")
+	id, err := uuid.Parse(id_)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"message": "Invalid ID",
+			"status":  "error",
+		})
 	}
-
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
@@ -106,7 +108,16 @@ func DeleteRole(c *fiber.Ctx) error {
 		})
 	}
 
-	err := rolesRepo.DeleteRoleById(role.ID)
+	roleExists, err := rolesRepo.GetRoleById(id)
+
+	if err != nil || roleExists.ID == uuid.Nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Role Not Found",
+			"status":  "false",
+		})
+	}
+
+	err = rolesRepo.DeleteRoleById(id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
