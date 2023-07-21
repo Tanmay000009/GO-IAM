@@ -279,28 +279,62 @@ func UpdateUser(c *fiber.Ctx) error {
 
 func DeleteUser(c *fiber.Ctx) error {
 
-	var user model.User
-
-	err := c.BodyParser(&user)
-
+	id_ := c.Params("id")
+	id, err := uuid.Parse(id_)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
-			"message": "Bad Request",
+			"message": "Invalid ID",
 			"status":  "error",
 		})
 	}
 
-	userDeleted, err := userRepo.DeleteUser(user)
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	userLoggedIn, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && userLoggedIn.ID == id && !roles.HasAnyRole(userLoggedIn.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	userToDelete, err := userRepo.FindUserByIdWithPassword(id)
 
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "false",
+		})
+	}
+
+	if userToDelete.ID == uuid.Nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	userToDelete, err = userRepo.FindUserByIdWithPassword(id)
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	// Delete the user
+	userDeleted, err := userRepo.DeleteUser(userToDelete)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal Server Error",
 			"status":  "error",
 		})
 	}
 
-	return c.Status(200).JSON(fiber.Map{
-		"message": "OK",
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "User deleted successfully",
 		"status":  "success",
 		"data":    userDeleted,
 	})
@@ -454,6 +488,76 @@ func DeleteRoleFromUser(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Role removed from user",
+		"status":  "success",
+		"data":    updatedUser,
+	})
+}
+
+func DeactivateUser(c *fiber.Ctx) error {
+	id_ := c.Params("id")
+	id, err := uuid.Parse(id_)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"message": "Invalid ID",
+			"status":  "error",
+		})
+	}
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	userLoggedIn, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(userLoggedIn.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	userToDeactivate, err := userRepo.FindUserByIdWithPassword(id)
+
+	if userToDeactivate.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "User is deleted",
+			"status":  "error",
+		})
+	}
+
+	if userToDeactivate.AccountStatus == constants.DEACTIVATED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "User Account is already deactivated",
+			"status":  "error",
+		})
+	}
+
+	if userToDeactivate.ID == uuid.Nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	// Perform the user deactivation logic here
+	// ...
+
+	// Update the user with the new account status
+	userToDeactivate.AccountStatus = constants.DEACTIVATED
+	updatedUser, err := userRepo.UpdateUser(userToDeactivate)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "User deactivated successfully",
 		"status":  "success",
 		"data":    updatedUser,
 	})
