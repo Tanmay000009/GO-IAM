@@ -13,8 +13,8 @@ type User struct {
 	Username      string                  `gorm:"type:varchar(100);not null; uniqueIndex"`
 	Password      string                  `gorm:"type:varchar(100);not null"`
 	OrgID         uuid.UUID               `gorm:"type:uuid;"`
-	Roles         []Role                  `gorm:"many2many:user_roles;"`
-	Org           *Org                    `gorm:"foreignKey:OrgID"`
+	Roles         []Role                  `gorm:"many2many:user_roles;constraint:OnDelete:CASCADE;"`
+	Org           *Org                    `gorm:"foreignKey:OrgID;constraint:OnDelete:CASCADE;"`
 	AccountStatus constants.AccountStatus `gorm:"type:varchar(100);not null;default:'active'"`
 	CreatedAt     *time.Time              `gorm:"not null;default:now()"`
 	UpdatedAt     *time.Time              `gorm:"not null;default:now()"`
