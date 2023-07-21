@@ -25,14 +25,14 @@ func FindUsers() ([]userSchema.UserResponse, error) {
 func FindUserByIdWithPassword(id uuid.UUID) (model.User, error) {
 	var user model.User
 	db := database.DB
-	err := db.Preload("Roles").Preload("Org").First(&user).Where("id = ? AND account_status != ?", id, constants.DELETED).Error
+	err := db.Preload("Roles").Preload("Org").Where("id = ? AND account_status != ?", id, constants.DELETED).First(&user).Error
 	return user, err
 }
 
 func FindUserById(id uuid.UUID) (userSchema.UserResponse, error) {
 	var user model.User
 	db := database.DB
-	err := db.Preload("Roles").First(&user).Where("id = ? AND account_status != ?", id, constants.DELETED).Error
+	err := db.Preload("Roles").Where("id = ? AND account_status != ?", id, constants.DELETED).First(&user).Error
 	user_ := userSchema.MapUserRecord(&user)
 
 	return user_, err
@@ -42,7 +42,7 @@ func FindUserWithOrgById(id string) (userSchema.UserResponseWithOrg, error) {
 	var user model.User
 
 	db := database.DB
-	err := db.Preload("Roles").Preload("Org").First(&user).Where("id = ? AND account_status != ?", id, constants.DELETED).Error
+	err := db.Preload("Roles").Preload("Org").Where("id = ? AND account_status != ?", id, constants.DELETED).First(&user).Error
 
 	userWithOrg := userSchema.MapUserRecordWithOrg(&user)
 
@@ -55,7 +55,7 @@ func FindUserWithOrgByUsername(username string) (userSchema.UserResponseWithOrg,
 	db := database.DB
 
 	// Perform a left join on orgs table using Preload
-	err := db.Preload("Roles").Preload("Org").First(&user).Where("username = ? AND account_status != ?", username, constants.DELETED).Error
+	err := db.Preload("Roles").Preload("Org").Where("username = ? AND account_status != ?", username, constants.DELETED).First(&user).Error
 
 	userWithOrg := userSchema.MapUserRecordWithOrg(&user)
 
@@ -65,14 +65,14 @@ func FindUserWithOrgByUsername(username string) (userSchema.UserResponseWithOrg,
 func FindUserByUsernameWithPassword(username string) (model.User, error) {
 	var user model.User
 	db := database.DB
-	err := db.Preload("Roles").First(&user).Where("username = ?", username).Error
+	err := db.Preload("Roles").Where("username = ?", username).First(&user).Error
 	return user, err
 }
 
 func FindUserByUsername(username string) (*model.User, error) {
 	var user *model.User
 	db := database.DB
-	err := db.First(&user).Where("username = ? AND account_status != ?", username, constants.DELETED).Error
+	err := db.Where("username = ? AND account_status != ?", username, constants.DELETED).First(&user).Error
 
 	return user, err
 }
@@ -93,7 +93,7 @@ func FindUsersByOrgId(orgId uuid.UUID) ([]userSchema.UserResponse, error) {
 func FindUsersByOrgIdAndRole(orgId uuid.UUID, role string) ([]userSchema.UserResponse, error) {
 	var users []model.User
 	db := database.DB
-	err := db.Find(&users).Where("account_status != ? AND org_id = ? AND roles LIKE ?", constants.DELETED, orgId, "%"+role+"%").Error
+	err := db.Where("account_status != ? AND org_id = ? AND roles LIKE ?", constants.DELETED, orgId, "%"+role+"%").Find(&users).Error
 
 	var users_ []userSchema.UserResponse
 	for _, user := range users {
