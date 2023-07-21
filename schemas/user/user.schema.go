@@ -52,6 +52,12 @@ type AddOrDeleteRole struct {
 	UserId uuid.UUID `json:"user_id" validate:"required"`
 }
 
+type UpdatePassword struct {
+	UserId          uuid.UUID `json:"user_id" validate:"required"`
+	Password        string    `json:"password" validate:"required,min=8"`
+	PasswordConfirm string    `json:"confirmPassword" validate:"required,min=8"`
+}
+
 func MapUserRecord(user *model.User) UserResponse {
 
 	if user == nil || user.ID == uuid.Nil {

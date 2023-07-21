@@ -9,6 +9,7 @@ import (
 	constants "balkantask/utils"
 	"balkantask/utils/roles"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -317,5 +318,92 @@ func DeleteAccount(c *fiber.Ctx) error {
 		"message": "Account deletion initiated. Your account is under review, and will be marked as deleted in 5 days. Your data will be deleted after 45 days.",
 		"status":  "success",
 		"data":    updatedOrg,
+	})
+}
+
+func ChangePassword(c *fiber.Ctx) error {
+	var input orgSchema.UpdatePassword
+	err := c.BodyParser(&input)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Bad Request",
+			"status":  "error",
+		})
+	}
+
+	log.Println(input)
+
+	if input.Password != input.ConfirmPassword {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Password and password confirmation do not match",
+			"status":  "error",
+		})
+	}
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.OrgWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	// Validate the input fields
+	errors := model.ValidateStruct(input)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	org_, err := orgRepo.FindOrgById(input.OrgId)
+	if org_.AccountStatus == constants.DEACTIVATED || org_.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Account is deactivated",
+			"status":  "error",
+		})
+	}
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Account Not Found",
+			"status":  "false",
+		})
+	}
+
+	// check if new password is the same as the old password
+	err = bcrypt.CompareHashAndPassword([]byte(org_.Password), []byte(input.Password))
+	if err == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "New password cannot be the same as the old password",
+			"status":  "error",
+		})
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	org_.Password = string(hashedPassword)
+
+	updatedUser, err := orgRepo.UpdateOrg(org_)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to update password",
+			"status":  "error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Password updated successfully",
+		"status":  "success",
+		"data":    updatedUser,
 	})
 }

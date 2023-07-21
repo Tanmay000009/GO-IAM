@@ -17,4 +17,5 @@ func SetupAuthRoutes(router fiber.Router) {
 	userRouter.Post("/logout", authHandler.LogoutUser)
 	userRouter.Post("/signup", authHandler.SignUpOrg)
 	userRouter.Delete("/:id", middleware.CheckJWT, authHandler.DeleteAccount)
+	userRouter.Put("/password", middleware.CheckJWT, authHandler.ChangePassword)
 }

@@ -29,6 +29,12 @@ type SignupInput struct {
 	ConfirmPassword string `json:"confirmPassword" validate:"required,min=8"`
 }
 
+type UpdatePassword struct {
+	OrgId           uuid.UUID `json:"user_id" validate:"required"`
+	Password        string    `json:"password" validate:"required,min=8"`
+	ConfirmPassword string    `json:"confirmPassword" validate:"required,min=8"`
+}
+
 func MapOrgRecord(user *model.Org) OrgResponse {
 	return OrgResponse{
 		ID:            user.ID,

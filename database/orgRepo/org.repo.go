@@ -3,6 +3,7 @@ package orgrepository
 import (
 	"balkantask/database"
 	"balkantask/model"
+	orgSchema "balkantask/schemas/org"
 	constants "balkantask/utils"
 
 	"github.com/google/uuid"
@@ -35,10 +36,13 @@ func CreateOrg(org model.Org) (model.Org, error) {
 	return org, err
 }
 
-func UpdateOrg(org model.Org) (model.Org, error) {
+func UpdateOrg(org model.Org) (orgSchema.OrgResponse, error) {
 	db := database.DB
 	err := db.Save(&org).Error
-	return org, err
+
+	org_ := orgSchema.MapOrgRecord(&org)
+
+	return org_, err
 }
 
 func DeleteOrg(org model.Org) (model.Org, error) {

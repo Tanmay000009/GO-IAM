@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -132,7 +133,6 @@ func CreateUser(c *fiber.Ctx) error {
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
 	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
-		// If neither org nor user is present or not of the correct type, or the user doesn't have the necessary permission, return an error
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -757,5 +757,91 @@ func SeedUsersFromExcel(c *fiber.Ctx) error {
 		"message": "Users seeded successfully",
 		"status":  "success",
 		"data":    seededUsers,
+	})
+}
+
+func ChangePassword(c *fiber.Ctx) error {
+	log.Println("Change Password")
+	var input userSchema.UpdatePassword
+	err := c.BodyParser(&input)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Bad Request",
+			"status":  "error",
+		})
+	}
+
+	if input.Password != input.PasswordConfirm {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Password and password confirmation do not match",
+			"status":  "error",
+		})
+	}
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	// Validate the input fields
+	errors := model.ValidateStruct(input)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Validation Error",
+			"status":  "error",
+			"errors":  errors,
+		})
+	}
+
+	user_, err := userRepo.FindUserByIdWithPassword(input.UserId)
+	if user_.AccountStatus == constants.DEACTIVATED || user_.AccountStatus == constants.DELETED {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Account is deactivated",
+			"status":  "error",
+		})
+	}
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User Not Found",
+			"status":  "false",
+		})
+	}
+
+	// check if new password is the same as the old password
+	err = bcrypt.CompareHashAndPassword([]byte(user_.Password), []byte(input.Password))
+	if err == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "New password cannot be the same as the old password",
+			"status":  "error",
+		})
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	user_.Password = string(hashedPassword)
+
+	updatedUser, err := userRepo.UpdateUser(user_)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to update password",
+			"status":  "error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Password updated successfully",
+		"status":  "success",
+		"data":    updatedUser,
 	})
 }
