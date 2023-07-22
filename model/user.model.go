@@ -10,20 +10,15 @@ import (
 
 type User struct {
 	BaseModel
-	Username      string                  `gorm:"type:varchar(100);not null;"`
+	Username      string                  `gorm:"primaryKey;autoIncrement:false;type:varchar(100);not null;"`
 	Password      string                  `gorm:"type:varchar(100);not null;" `
-	OrgID         uuid.UUID               `gorm:"type:uuid;"`
+	OrgID         uuid.UUID               `gorm:"primaryKey;autoIncrement:false;type:uuid;"`
 	Roles         []Role                  `gorm:"many2many:user_roles;constraint:OnDelete:CASCADE;"`
 	Groups        []Group                 `gorm:"many2many:user_groups;constraint:OnDelete:CASCADE;"`
 	Org           *Org                    `gorm:"foreignKey:OrgID;constraint:OnDelete:CASCADE;"`
 	AccountStatus constants.AccountStatus `gorm:"type:varchar(100);not null;default:'active'"`
 	CreatedAt     *time.Time              `gorm:"not null;default:now()"`
 	UpdatedAt     *time.Time              `gorm:"not null;default:now()"`
-}
-
-// Add a composite primary key for the users table
-func (User) PrimaryKey() []string {
-	return []string{"Username", "OrgID"}
 }
 
 var validate = validator.New()
