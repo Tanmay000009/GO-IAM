@@ -9,8 +9,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -25,15 +23,6 @@ func main() {
 	}
 
 	database.Connect()
-
-	dsn := "host=localhost user=postgres password=postgres dbname=balkantask port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-
-	// Migrate the schema
-	db.AutoMigrate()
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{
