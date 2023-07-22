@@ -92,7 +92,7 @@ func UserHasGroup(groups []model.Group, targetGroups []model.Group) bool {
 	return false
 }
 
-func UserHasTaskAuthorization(roles []model.Role, group []model.Group, targetRoles []model.Role) bool {
+func UserHasTaskAuthorization(roles []model.Role, group []model.Group, targetTask model.Task) bool {
 	userRoles := []model.Role{}
 	for _, role := range roles {
 		userRoles = append(userRoles, role)
@@ -105,7 +105,7 @@ func UserHasTaskAuthorization(roles []model.Role, group []model.Group, targetRol
 
 	uniqueRoles := RemoveDuplicates(userRoles)
 
-	for _, targetRole := range targetRoles {
+	for _, targetRole := range targetTask.Roles {
 		for _, task := range uniqueRoles {
 			if task.ID == targetRole.ID {
 				return true
