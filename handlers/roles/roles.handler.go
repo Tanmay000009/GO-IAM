@@ -4,6 +4,7 @@ import (
 	rolesRepo "balkantask/database/roles"
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
+	roleSchema "balkantask/schemas/role"
 	userSchema "balkantask/schemas/user"
 	"balkantask/utils/roles"
 
@@ -42,7 +43,7 @@ func GetRoleById(c *fiber.Ctx) error {
 }
 
 func CreateRole(c *fiber.Ctx) error {
-	var role model.Role
+	var role roleSchema.AddOrDeleteRole
 
 	if err := c.BodyParser(&role); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": err.Error()})
@@ -67,15 +68,20 @@ func CreateRole(c *fiber.Ctx) error {
 		})
 	}
 
-	exisitingRole, err := rolesRepo.GetRoleByName(role.Name)
-	if err == nil && exisitingRole.Name == role.Name {
+	exisitingRole, err := rolesRepo.GetRoleByName(role.RoleName)
+	if err == nil && exisitingRole.Name == role.RoleName {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Role already exists",
 			"status":  "error",
 		})
 	}
 
-	createdRole, err := rolesRepo.CreateRole(role)
+	newRole := model.Role{
+		Name: role.RoleName,
+		Type: role.Type,
+	}
+
+	createdRole, err := rolesRepo.CreateRole(newRole)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -125,6 +131,21 @@ func DeleteRole(c *fiber.Ctx) error {
 		})
 	}
 
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status": "success",
+		"data":   true,
+	})
+}
+
+func TestUserRole(c *fiber.Ctx) error {
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !userOK && !roles.UserHasRole(user.Roles, []roles.Role{roles.UserFullAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Forbidden",
+		})
+	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status": "success",
 		"data":   true,
