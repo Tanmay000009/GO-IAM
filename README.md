@@ -14,7 +14,7 @@
   <h3 align="center">Tanmay Vyas's submission</h3>
 
   <p align="center">
-    Submission to DYTE's summer intern hiring by Tanmay Vyas 20BCE0755
+    Submission to Balkan ID FTE hiring by Tanmay Vyas 20BCE0755
   </p>
 </div>
 
