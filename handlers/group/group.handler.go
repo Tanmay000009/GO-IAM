@@ -658,7 +658,33 @@ func TestUserGroup(c *fiber.Ctx) error {
 
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !userOK && !roles.HasAnyGroup(user.Groups, []model.Group{}) {
+	var groupExists model.Group
+	var err error
+
+	if group.GroupId != uuid.Nil {
+		groupExists, err = groupRepo.GetGroupById(group.GroupId)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Invalid Group ID",
+				"status":  "error",
+			})
+		}
+	} else if group.GroupName != "" {
+		groupExists, err = groupRepo.GetGroupByName(group.GroupName)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Invalid Group Name",
+				"status":  "error",
+			})
+		}
+	} else {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Group ID or Group Name is required",
+			"status":  "error",
+		})
+	}
+
+	if !userOK && !roles.HasAnyGroup(user.Groups, []model.Group{groupExists}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
