@@ -53,6 +53,13 @@ func CreateRole(role model.Role) (model.Role, error) {
 	return role, err
 }
 
+func CreateRoles(role []model.Role) ([]model.Role, error) {
+	db := database.DB
+	err := db.Create(&role).Error
+
+	return role, err
+}
+
 func DeleteRole(role *model.Role) error {
 	db := database.DB
 

@@ -184,3 +184,81 @@ func TestUserRole(c *fiber.Ctx) error {
 		"data":   true,
 	})
 }
+
+func SeedRoles(c *fiber.Ctx) error {
+	roles := []model.Role{
+		{
+			Name: "ORG_READ_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "ORG_WRITE_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "ORG_FULL_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "GROUP_READ_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "GROUP_WRITE_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "GROUP_FULL_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "TASKS_READ_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "TASKS_WRITE_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "TASKS_FULL_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "ROLE_READ_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "ROLE_WRITE_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "ROLE_FULL_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "USER_READ_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "USER_WRITE_ACCESS",
+			Type: "SYSTEM",
+		},
+		{
+			Name: "USER_FULL_ACCESS",
+			Type: "SYSTEM",
+		},
+	}
+
+	roles, err := rolesRepo.CreateRoles(roles)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Roles already exist",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status": "success",
+		"data":   true,
+	})
+}

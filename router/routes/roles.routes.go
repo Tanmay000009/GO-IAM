@@ -14,5 +14,6 @@ func SetupRolesRoutes(router fiber.Router) {
 	roles.Get("/:id", rolesHandler.GetRoleById)
 	roles.Post("/", middleware.CheckJWT, rolesHandler.CreateRole)
 	roles.Post("/test", middleware.CheckJWT, rolesHandler.TestUserRole)
+	roles.Post("/seed", middleware.CheckJWT, rolesHandler.SeedRoles)
 	roles.Delete("/:id", middleware.CheckJWT, rolesHandler.DeleteRole)
 }
