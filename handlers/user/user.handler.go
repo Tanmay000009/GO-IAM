@@ -98,8 +98,8 @@ func GetUserById(c *fiber.Ctx) error {
 
 	user_, err := userRepo.FindUserWithOrgById(id)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"message": "Internal Server Error",
+		return c.Status(404).JSON(fiber.Map{
+			"message": "User Not Found",
 			"status":  "error",
 		})
 	}

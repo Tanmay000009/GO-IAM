@@ -43,8 +43,13 @@ func FindUserWithOrgById(id string) (userSchema.UserResponseWithOrg, error) {
 	var user model.User
 
 	db := database.DB
-	err := db.Preload("Roles").Preload("Groups").Preload("Org").Where("id = ? AND account_status != ?", id, constants.DELETED).First(&user).Error
-
+	err := db.Preload("Roles").Preload("Groups").Preload("Orgs").Where("id = ? AND account_status != ?", id, constants.DELETED).First(&user).Error
+	if err != nil {
+		return userSchema.UserResponseWithOrg{}, err
+	}
+	if user.ID == uuid.Nil {
+		return userSchema.UserResponseWithOrg{}, err
+	}
 	userWithOrg := userSchema.MapUserRecordWithOrg(&user)
 
 	return userWithOrg, err
