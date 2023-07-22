@@ -7,8 +7,7 @@ type AddOrDeleteRole struct {
 	Type     string `json:"type" validate:"required"`
 }
 
-type CreateGroup struct {
-	Name      string      `json:"name" validate:"required"`
-	RoleIds   []uuid.UUID `json:"roleIds"`
-	RoleNames []string    `json:"roleNames"`
+type TestRole struct {
+	RoleName string    `json:"roleName"`
+	RoleId   uuid.UUID `json:"roleId"`
 }

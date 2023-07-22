@@ -52,7 +52,7 @@ func CreateRole(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.RoleFullAccess, roles.OrgReadAccess, roles.RoleReadAccess}) {
+	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.RoleFullAccess, roles.OrgReadAccess, roles.RoleReadAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -107,7 +107,7 @@ func DeleteRole(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.RoleFullAccess}) {
+	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.RoleFullAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -138,16 +138,49 @@ func DeleteRole(c *fiber.Ctx) error {
 }
 
 func TestUserRole(c *fiber.Ctx) error {
+
+	var role roleSchema.TestRole
+
+	if err := c.BodyParser(&role); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": err.Error()})
+	}
+
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !userOK && !roles.UserHasRole(user.Roles, []roles.Role{roles.UserFullAccess}) {
+	var roleExists model.Role
+	var err error
+
+	if role.RoleId != uuid.Nil {
+		roleExists, err = rolesRepo.GetRoleById(role.RoleId)
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "Role Not Found",
+				"status":  "false",
+			})
+		}
+	} else if role.RoleName != "" {
+		roleExists, err = rolesRepo.GetRoleByName(role.RoleName)
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "Role Not Found",
+				"status":  "false",
+			})
+		}
+	} else {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid Role",
+			"status":  "error",
+		})
+	}
+
+	if !userOK && !roles.UserHasRole(user.Roles, []model.Role{roleExists}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
 		})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status": "success",
+		"status": "User has role",
 		"data":   true,
 	})
 }

@@ -14,3 +14,8 @@ type CreateGroup struct {
 	RoleIds   []uuid.UUID `json:"roleIds"`
 	RoleNames []string    `json:"roleNames"`
 }
+
+type TestGroup struct {
+	GroupName string    `json:"groupName"`
+	GroupId   uuid.UUID `json:"groupId"`
+}
