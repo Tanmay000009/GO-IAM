@@ -612,25 +612,10 @@ func SeedGroupsFromCSV(c *fiber.Ctx) error {
 
 		groupName := row[0]
 		roleNames := strings.Split(row[1], " ")
-		log.Println()
-		log.Println()
-		log.Println()
-		log.Println()
-		log.Println()
-		log.Println(groupName)
-		log.Println(roleNames)
-		log.Println(roleNames)
-		log.Println()
-		log.Println()
-		log.Println()
-		log.Println()
-		log.Println()
 		// Trim spaces from role names
 		for i := range roleNames {
 			roleNames[i] = strings.TrimSpace(roleNames[i])
 		}
-
-		log.Println(roleNames)
 
 		// Retrieve the roles from the database based on role names
 		rolesExist, err := rolesRepo.GetRolesByNames(roleNames)
@@ -640,12 +625,6 @@ func SeedGroupsFromCSV(c *fiber.Ctx) error {
 				"status":  "error",
 			})
 		}
-
-		log.Println()
-		log.Println()
-		log.Println()
-		log.Println()
-		log.Println(rolesExist)
 
 		newGroup := model.Group{
 			Name:  groupName,
