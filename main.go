@@ -25,7 +25,7 @@ func main() {
 
 	database.Connect()
 
-	schedulers.Scheduler()
+	go schedulers.Scheduler()
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{
