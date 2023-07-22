@@ -19,7 +19,30 @@ const (
 	GroupFullAccess  Role = "GROUP_FULL_ACCESS"
 )
 
-func HasAnyRole(roles []model.Role, targetRoles []Role) bool {
+func HasAnyRole(roles []model.Role, group []model.Group, targetRoles []Role) bool {
+	userRoles := append(roles, group[0].Roles...)
+	for _, targetRole := range targetRoles {
+		for _, role := range userRoles {
+			if Role(role.Name) == targetRole {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func UserHasRole(roles []model.Role, targetRoles []Role) bool {
+	for _, targetRole := range targetRoles {
+		for _, role := range roles {
+			if Role(role.Name) == targetRole {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func GroupHasRole(roles []model.Role, targetRoles []Role) bool {
 	for _, targetRole := range targetRoles {
 		for _, role := range roles {
 			if Role(role.Name) == targetRole {

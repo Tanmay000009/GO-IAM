@@ -191,7 +191,6 @@ func SignUpOrg(c *fiber.Ctx) error {
 	org := model.Org{
 		Username: input.Username,
 		Email:    input.Email,
-		// Set other fields accordingly
 	}
 
 	errors := model.ValidateStruct(org)
@@ -241,7 +240,7 @@ func DeleteAccount(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	userLoggedIn, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(userLoggedIn.Roles, []roles.Role{roles.OrgFullAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(userLoggedIn.Roles, userLoggedIn.Groups, []roles.Role{roles.OrgFullAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -312,7 +311,7 @@ func ChangePassword(c *fiber.Ctx) error {
 
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.OrgWriteAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.OrgWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",

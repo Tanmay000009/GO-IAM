@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,11 +23,9 @@ import (
 )
 
 func GetUsers(c *fiber.Ctx) error {
-	// Check for org and user in locals
 	org, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	// Check for unauthorized access
 	if !orgOK && !userOK {
 		return c.Status(400).JSON(fiber.Map{
 			"message": "Unauthorized",
@@ -36,25 +33,21 @@ func GetUsers(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get users based on the context (organization or user)
 	var users []userSchema.UserResponse
 	var err error
 
 	if orgOK && org.ID != uuid.Nil {
-		// Fetch users based on the organization ID
 		users, err = userRepo.FindUsersByOrgId(org.ID)
 	} else if userOK {
-		// Check if the user has the required role
-		if !roles.HasAnyRole(user.Roles, []roles.Role{roles.UserReadAccess, roles.OrgFullAccess, roles.OrgReadAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		if !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.UserReadAccess, roles.OrgFullAccess, roles.OrgReadAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 			return c.Status(403).JSON(fiber.Map{
 				"message": "Forbidden",
 				"status":  "error",
 			})
 		}
-		// Fetch users based on the user's OrgID
+
 		users, err = userRepo.FindUsersByOrgId(user.OrgId)
 	} else {
-		// Handle the case when neither org nor user is present or of the correct type
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Invalid token",
 			"status":  "error",
@@ -62,14 +55,12 @@ func GetUsers(c *fiber.Ctx) error {
 	}
 
 	if err != nil {
-		// Handle internal server errors
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Internal Server Error",
 			"status":  "error",
 		})
 	}
 
-	// Return the users data
 	return c.Status(200).JSON(fiber.Map{
 		"message": "OK",
 		"status":  "success",
@@ -91,7 +82,7 @@ func GetUserById(c *fiber.Ctx) error {
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
 	if userOK {
-		if user.ID != id_uuid && !roles.HasAnyRole(user.Roles, []roles.Role{roles.UserReadAccess, roles.OrgFullAccess, roles.OrgReadAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		if user.ID != id_uuid && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.UserReadAccess, roles.OrgFullAccess, roles.OrgReadAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 			return c.Status(403).JSON(fiber.Map{
 				"message": "Forbidden",
 				"status":  "error",
@@ -129,11 +120,10 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if the user is an organization or has the necessary permission
 	org, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -150,7 +140,6 @@ func CreateUser(c *fiber.Ctx) error {
 		}
 	}
 
-	// Check the existence of the user.
 	if exisitingUser.ID != uuid.Nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"message": "Username already in use",
@@ -179,7 +168,6 @@ func CreateUser(c *fiber.Ctx) error {
 	// Create the new user
 	newUser := model.User{
 		Username: input.Username,
-		// Set other fields accordingly
 	}
 
 	// Validate the new user data
@@ -228,7 +216,6 @@ func CreateUser(c *fiber.Ctx) error {
 		Passcode:      input.Password,
 	}
 
-	// Return the created user data
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Created",
 		"status":  "success",
@@ -258,18 +245,16 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if the user is an organization or the user themselves, or has the necessary permission
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && user.ID != updatedUser.ID && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !orgOK && !userOK && user.ID != updatedUser.ID && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
 		})
 	}
 
-	// Fetch the existing user from the database
 	existingUser, err := userRepo.FindUserById(id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -292,7 +277,6 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// Validate the updated user data
 	errors := model.ValidateStruct(updatedUser)
 	if errors != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -331,7 +315,7 @@ func DeleteUser(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	userLoggedIn, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && userLoggedIn.ID == id && !roles.HasAnyRole(userLoggedIn.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess}) {
+	if !orgOK && !userOK && userLoggedIn.ID == id && !roles.HasAnyRole(userLoggedIn.Roles, userLoggedIn.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -393,7 +377,7 @@ func AddRoleToUser(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -434,7 +418,7 @@ func AddRoleToUser(c *fiber.Ctx) error {
 	}
 
 	// Check if the user already has the role
-	if roles.HasAnyRole(user_.Roles, []roles.Role{roles.Role(role.Name)}) {
+	if roles.UserHasRole(user_.Roles, []roles.Role{roles.Role(role.Name)}) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "User already has the role",
 			"status":  "error",
@@ -443,7 +427,6 @@ func AddRoleToUser(c *fiber.Ctx) error {
 
 	user_, err = userRepo.AddRoleToUser(role, user_)
 
-	// updatedUser, err := userRepo.UpdateUser(user_)
 	if err != nil {
 
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -474,7 +457,7 @@ func DeleteRoleFromUser(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -513,7 +496,7 @@ func DeleteRoleFromUser(c *fiber.Ctx) error {
 	}
 
 	// Check if the user has the role
-	if !roles.HasAnyRole(user_.Roles, []roles.Role{roles.Role(role.Name)}) {
+	if !roles.UserHasRole(user_.Roles, []roles.Role{roles.Role(role.Name)}) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "User does not have the role",
 			"status":  "error",
@@ -548,7 +531,7 @@ func DeactivateUser(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	userLoggedIn, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(userLoggedIn.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(userLoggedIn.Roles, userLoggedIn.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -585,10 +568,6 @@ func DeactivateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// Perform the user deactivation logic here
-	// ...
-
-	// Update the user with the new account status
 	userToDeactivate.AccountStatus = constants.DEACTIVATED
 	updatedUser, err := userRepo.UpdateUser(userToDeactivate)
 	if err != nil {
@@ -618,7 +597,7 @@ func ReactivateUser(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	userLoggedIn, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(userLoggedIn.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(userLoggedIn.Roles, userLoggedIn.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -683,6 +662,16 @@ func SeedUsersFromExcel(c *fiber.Ctx) error {
 	// Close the file after the function returns
 	defer uploadedFile.Close()
 
+	org, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
 	// Create a temporary file to save the uploaded content
 	tempFile, err := os.CreateTemp("", "upload-*.xlsx")
 	// CreateTemp function, it generates a unique temporary file name by replacing the asterisk (*) with a random string.
@@ -715,17 +704,6 @@ func SeedUsersFromExcel(c *fiber.Ctx) error {
 	// Define the columns to read from the Excel file (adjust the column numbers accordingly)
 	usernameCol := 1
 	passwordCol := 2
-
-	// Check if the user is an organization or has the necessary permission
-	org, orgOK := c.Locals("org").(orgSchema.OrgResponse)
-	user, userOK := c.Locals("user").(userSchema.UserResponse)
-
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "Forbidden",
-			"status":  "error",
-		})
-	}
 
 	rows, err := xlsx.GetRows("Sheet1")
 	if err != nil {
@@ -823,7 +801,6 @@ func SeedUsersFromExcel(c *fiber.Ctx) error {
 }
 
 func ChangePassword(c *fiber.Ctx) error {
-	log.Println("Change Password")
 	var input userSchema.UpdatePassword
 	err := c.BodyParser(&input)
 	if err != nil {
@@ -842,7 +819,7 @@ func ChangePassword(c *fiber.Ctx) error {
 
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -921,7 +898,7 @@ func AddGroupToUser(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -1000,7 +977,7 @@ func DeleteGroupFromUser(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
