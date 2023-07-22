@@ -394,14 +394,12 @@ func AddRoleToUser(c *fiber.Ctx) error {
 	}
 
 	user_, err := userRepo.FindUserByIdWithPassword(input.UserId)
-
 	if user_.AccountStatus == constants.DEACTIVATED || user_.AccountStatus == constants.DELETED {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Account is deactivated",
 			"status":  "error",
 		})
 	}
-
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "User Not Found",
@@ -409,10 +407,27 @@ func AddRoleToUser(c *fiber.Ctx) error {
 		})
 	}
 
-	role, err := rolesRepo.GetRoleById(input.RoleId)
-	if err != nil {
+	// Check if the input contains Role ID or Role Name
+	var role model.Role
+	if input.RoleId != uuid.Nil {
+		role, err = rolesRepo.GetRoleById(input.RoleId)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Role doesn't exist",
+				"status":  "error",
+			})
+		}
+	} else if input.RoleName != "" {
+		role, err = rolesRepo.GetRoleByName(input.RoleName)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Role doesn't exist",
+				"status":  "error",
+			})
+		}
+	} else {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Role doesn't exist",
+			"message": "Role ID or Role Name is required",
 			"status":  "error",
 		})
 	}
@@ -426,9 +441,7 @@ func AddRoleToUser(c *fiber.Ctx) error {
 	}
 
 	user_, err = userRepo.AddRoleToUser(role, user_)
-
 	if err != nil {
-
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal Server Error",
 			"status":  "error",
@@ -487,10 +500,27 @@ func DeleteRoleFromUser(c *fiber.Ctx) error {
 		})
 	}
 
-	role, err := rolesRepo.GetRoleById(input.RoleId)
-	if err != nil {
+	// Check if the input contains Role ID or Role Name
+	var role model.Role
+	if input.RoleId != uuid.Nil {
+		role, err = rolesRepo.GetRoleById(input.RoleId)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Role doesn't exist",
+				"status":  "error",
+			})
+		}
+	} else if input.RoleName != "" {
+		role, err = rolesRepo.GetRoleByName(input.RoleName)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Role doesn't exist",
+				"status":  "error",
+			})
+		}
+	} else {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Role doesn't exist",
+			"message": "Role ID or Role Name is required",
 			"status":  "error",
 		})
 	}
@@ -511,10 +541,12 @@ func DeleteRoleFromUser(c *fiber.Ctx) error {
 		})
 	}
 
+	mappedUser := userSchema.MapUserRecord(&updatedUser)
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Role removed from user",
 		"status":  "success",
-		"data":    updatedUser,
+		"data":    mappedUser,
 	})
 }
 
@@ -930,10 +962,27 @@ func AddGroupToUser(c *fiber.Ctx) error {
 		})
 	}
 
-	group, err := groupRepo.GetGroupById(input.GroupId)
-	if err != nil {
+	// Check if the input contains Group ID or Group Name
+	var group model.Group
+	if input.GroupId != uuid.Nil {
+		group, err = groupRepo.GetGroupById(input.GroupId)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Group doesn't exist",
+				"status":  "error",
+			})
+		}
+	} else if input.GroupName != "" {
+		group, err = groupRepo.GetGroupByName(input.GroupName)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Group doesn't exist",
+				"status":  "error",
+			})
+		}
+	} else {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Group doesn't exist",
+			"message": "Group ID or Group Name is required",
 			"status":  "error",
 		})
 	}
@@ -948,7 +997,6 @@ func AddGroupToUser(c *fiber.Ctx) error {
 
 	user_, err = userRepo.AddGroupToUser(group, user_)
 	if err != nil {
-
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal Server Error",
 			"status":  "error",
@@ -1007,10 +1055,27 @@ func DeleteGroupFromUser(c *fiber.Ctx) error {
 		})
 	}
 
-	group, err := groupRepo.GetGroupById(input.GroupId)
-	if err != nil {
+	// Check if the input contains Group ID or Group Name
+	var group model.Group
+	if input.GroupId != uuid.Nil {
+		group, err = groupRepo.GetGroupById(input.GroupId)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Group doesn't exist",
+				"status":  "error",
+			})
+		}
+	} else if input.GroupName != "" {
+		group, err = groupRepo.GetGroupByName(input.GroupName)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Group doesn't exist",
+				"status":  "error",
+			})
+		}
+	} else {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Group doesn't exist",
+			"message": "Group ID or Group Name is required",
 			"status":  "error",
 		})
 	}

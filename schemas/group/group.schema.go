@@ -3,8 +3,10 @@ package groupSchema
 import "github.com/google/uuid"
 
 type AddOrDeleteRole struct {
-	RoleId  uuid.UUID `json:"roleId" validate:"required"`
-	GroupId uuid.UUID `json:"groupId" validate:"required"`
+	RoleId    uuid.UUID `json:"roleId"`
+	RoleName  string    `json:"roleName"`
+	GroupId   uuid.UUID `json:"groupId"`
+	GroupName string    `json:"groupName"`
 }
 
 type CreateGroup struct {

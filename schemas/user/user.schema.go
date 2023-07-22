@@ -51,13 +51,15 @@ type CreateUserResponse struct {
 }
 
 type AddOrDeleteRole struct {
-	RoleId uuid.UUID `json:"roleId" validate:"required"`
-	UserId uuid.UUID `json:"userId" validate:"required"`
+	RoleId   uuid.UUID `json:"roleId" `
+	RoleName string    `json:"roleName" `
+	UserId   uuid.UUID `json:"userId" validate:"required"`
 }
 
 type AddOrDeleteGroup struct {
-	GroupId uuid.UUID `json:"groupId" validate:"required"`
-	UserId  uuid.UUID `json:"userId" validate:"required"`
+	GroupId   uuid.UUID `json:"groupId"`
+	GroupName string    `json:"groupName"`
+	UserId    uuid.UUID `json:"userId" validate:"required"`
 }
 
 type UpdatePassword struct {

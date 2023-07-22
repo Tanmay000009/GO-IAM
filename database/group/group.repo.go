@@ -21,6 +21,13 @@ func GetGroupById(id uuid.UUID) (model.Group, error) {
 	return group, err
 }
 
+func GetGroupByName(name string) (model.Group, error) {
+	var group model.Group
+	db := database.DB
+	err := db.Preload("Roles").Where("name = ?", name).First(&group).Error
+	return group, err
+}
+
 func CreateGroup(group *model.Group) (*model.Group, error) {
 	db := database.DB
 	err := db.Create(&group).Error
