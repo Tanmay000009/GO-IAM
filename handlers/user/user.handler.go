@@ -131,7 +131,15 @@ func CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	exisitingUser, err := userRepo.FindUserByUsername(input.Username)
+	var orgId uuid.UUID
+
+	if org.ID != uuid.Nil {
+		orgId = org.ID
+	} else {
+		orgId = user.OrgId
+	}
+
+	exisitingUser, err := userRepo.FindUserByOrgAndUsernameWithPassword(input.Username, orgId.String())
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(500).JSON(fiber.Map{
