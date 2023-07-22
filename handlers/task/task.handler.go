@@ -24,7 +24,7 @@ func GetAllTasks(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess, roles.OrgReadAccess, roles.TasksReadAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess, roles.OrgReadAccess, roles.TasksReadAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -52,7 +52,7 @@ func GetTaskById(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess, roles.OrgReadAccess, roles.TasksReadAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess, roles.OrgReadAccess, roles.TasksReadAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -77,7 +77,7 @@ func CreateTask(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -170,7 +170,7 @@ func DeleteTaskById(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -213,7 +213,7 @@ func AddRoleToTask(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.TasksFullAccess, roles.OrgWriteAccess, roles.TasksWriteAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.TasksFullAccess, roles.OrgWriteAccess, roles.TasksWriteAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -309,7 +309,7 @@ func DeleteRoleFromTask(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.TasksFullAccess, roles.OrgWriteAccess, roles.TasksWriteAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.TasksFullAccess, roles.OrgWriteAccess, roles.TasksWriteAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -415,7 +415,7 @@ func SeedTasksFromExcel(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -540,7 +540,7 @@ func SeedTasksFromCSV(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.TasksWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.TasksFullAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",

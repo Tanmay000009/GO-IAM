@@ -24,7 +24,7 @@ func GetAllGroups(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess, roles.OrgReadAccess, roles.GroupReadAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess, roles.OrgReadAccess, roles.GroupReadAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -52,7 +52,7 @@ func GetGroupById(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess, roles.OrgReadAccess, roles.GroupReadAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess, roles.OrgReadAccess, roles.GroupReadAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -77,7 +77,7 @@ func CreateGroup(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -170,7 +170,7 @@ func DeleteGroupById(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -213,7 +213,7 @@ func AddRoleToGroup(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.GroupFullAccess, roles.OrgWriteAccess, roles.GroupWriteAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.GroupFullAccess, roles.OrgWriteAccess, roles.GroupWriteAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -309,7 +309,7 @@ func DeleteRoleFromGroup(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -415,7 +415,7 @@ func SeedGroupsFromExcel(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",
@@ -540,7 +540,7 @@ func SeedGroupsFromCSV(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Forbidden",
 			"status":  "error",

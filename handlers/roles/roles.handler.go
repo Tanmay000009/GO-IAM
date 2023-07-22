@@ -52,7 +52,7 @@ func CreateRole(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.RoleFullAccess, roles.OrgReadAccess, roles.RoleReadAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.RoleFullAccess, roles.OrgReadAccess, roles.RoleReadAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
@@ -107,7 +107,7 @@ func DeleteRole(c *fiber.Ctx) error {
 	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
 	user, userOK := c.Locals("user").(userSchema.UserResponse)
 
-	if !orgOK && !userOK && !roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.RoleFullAccess}) {
+	if !(orgOK || (userOK && roles.UserIsAuthorized(user.Roles, user.Groups, []roles.Role{roles.RoleWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.RoleFullAccess}))) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
