@@ -93,22 +93,29 @@ func CreateGroup(c *fiber.Ctx) error {
 		})
 	}
 
+	var rolesExist []model.Role
+	var err error
 	// Check if the roles (id) exist in the database
-	rolesExist, err := rolesRepo.GetRolesByIds(group.RoleIds)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid Role IDs",
-			"status":  "error",
-		})
+	if len(group.RoleIds) > 0 {
+		rolesExist, err = rolesRepo.GetRolesByIds(group.RoleIds)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Invalid Role IDs",
+				"status":  "error",
+			})
+		}
 	}
 
+	var rolesExist2 []model.Role
 	// Check if the roles (name) exist in the database
-	rolesExist2, err := rolesRepo.GetRolesByNames(group.RoleNames)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid Role IDs",
-			"status":  "error",
-		})
+	if len(group.RoleNames) > 0 {
+		rolesExist2, err = rolesRepo.GetRolesByNames(group.RoleNames)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Invalid Role Names",
+				"status":  "error",
+			})
+		}
 	}
 
 	rolesExist = append(rolesExist, rolesExist2...)
@@ -130,7 +137,7 @@ func CreateGroup(c *fiber.Ctx) error {
 	}
 
 	// Verify if all roles were found
-	if len(rolesExist) != len(group.RoleIds) {
+	if len(rolesExist) != len(group.RoleIds)+len(group.RoleNames) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Invalid Role IDs",
 			"status":  "error",
