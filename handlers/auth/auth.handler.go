@@ -9,7 +9,6 @@ import (
 	constants "balkantask/utils"
 	"balkantask/utils/roles"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -299,8 +298,6 @@ func ChangePassword(c *fiber.Ctx) error {
 			"status":  "error",
 		})
 	}
-
-	log.Println(input)
 
 	if input.Password != input.ConfirmPassword {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
