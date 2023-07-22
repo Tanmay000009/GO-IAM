@@ -112,7 +112,7 @@ func CreateGroup(c *fiber.Ctx) error {
 	}
 
 	rolesExist = append(rolesExist, rolesExist2...)
-	rolesExist = removeDuplicates(rolesExist)
+	rolesExist = roles.RemoveDuplicates(rolesExist)
 
 	groupExists, err := groupRepo.GetGroupByName(group.Name)
 	if err != nil && err.Error() != "record not found" {
@@ -694,19 +694,4 @@ func TestUserGroup(c *fiber.Ctx) error {
 		"status": "User has role",
 		"data":   true,
 	})
-}
-
-func removeDuplicates(rolesExist []model.Role) []model.Role {
-
-	uniqueRolesMap := make(map[uuid.UUID]struct{})
-	var uniqueRoles []model.Role
-
-	for _, role := range rolesExist {
-		if _, found := uniqueRolesMap[role.ID]; !found {
-			uniqueRolesMap[role.ID] = struct{}{}
-			uniqueRoles = append(uniqueRoles, role)
-		}
-	}
-
-	return uniqueRoles
 }
