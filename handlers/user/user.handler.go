@@ -434,7 +434,7 @@ func AddRoleToUser(c *fiber.Ctx) error {
 	}
 
 	// Check if the user already has the role
-	if roles.UserHasRole(user_.Roles, []model.Role{role}) {
+	if roles.UserHasRole(user_.Roles, role) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "User already has the role",
 			"status":  "error",
@@ -527,7 +527,7 @@ func DeleteRoleFromUser(c *fiber.Ctx) error {
 	}
 
 	// Check if the user has the role
-	if !roles.UserHasRole(user_.Roles, []model.Role{role}) {
+	if !roles.UserHasRole(user_.Roles, role) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "User does not have the role",
 			"status":  "error",

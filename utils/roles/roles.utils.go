@@ -31,12 +31,10 @@ func UserIsAuthorized(roles []model.Role, group []model.Group, targetRoles []Rol
 	return false
 }
 
-func UserHasRole(roles []model.Role, targetRoles []model.Role) bool {
-	for _, targetRole := range targetRoles {
-		for _, role := range roles {
-			if role.ID == targetRole.ID {
-				return true
-			}
+func UserHasRole(roles []model.Role, targetRole model.Role) bool {
+	for _, role := range roles {
+		if role.ID == targetRole.ID {
+			return true
 		}
 	}
 	return false

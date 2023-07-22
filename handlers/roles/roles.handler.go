@@ -173,7 +173,7 @@ func TestUserRole(c *fiber.Ctx) error {
 		})
 	}
 
-	if !userOK && !roles.UserHasRole(user.Roles, []model.Role{roleExists}) {
+	if !userOK && !roles.UserHasRole(user.Roles, roleExists) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
