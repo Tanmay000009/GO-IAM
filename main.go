@@ -3,6 +3,7 @@ package main
 import (
 	"balkantask/database"
 	"balkantask/router"
+	"balkantask/utils/schedulers"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,6 +24,8 @@ func main() {
 	}
 
 	database.Connect()
+
+	schedulers.Scheduler()
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{

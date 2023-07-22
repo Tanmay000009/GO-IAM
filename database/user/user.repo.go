@@ -5,6 +5,7 @@ import (
 	"balkantask/model"
 	userSchema "balkantask/schemas/user"
 	constants "balkantask/utils"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -157,4 +158,20 @@ func DeleteGroupFromUser(group model.Group, user model.User) (model.User, error)
 	db := database.DB
 	err := db.Model(&user).Association("Groups").Delete(&group)
 	return user, err
+}
+
+func GetDeactivatedUserForThreshold(threshold time.Time) ([]model.User, error) {
+	var users []model.User
+	db := database.DB
+	err := db.Where("account_status = ? AND updated_at < ?", constants.DEACTIVATED, threshold).Find(&users).Error
+	return users, err
+
+}
+
+func DeleteUsers(users []model.User) error {
+	db := database.DB
+	err := db.Model(&users).Association("Roles").Clear()
+	err = db.Model(&users).Association("Groups").Clear()
+	err = db.Delete(&users).Error
+	return err
 }

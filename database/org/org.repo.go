@@ -5,6 +5,7 @@ import (
 	"balkantask/model"
 	orgSchema "balkantask/schemas/org"
 	constants "balkantask/utils"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -47,6 +48,35 @@ func UpdateOrg(org model.Org) (orgSchema.OrgResponse, error) {
 
 func DeleteOrg(org model.Org) (model.Org, error) {
 	db := database.DB
-	err := db.Delete(&org).Error
+	err := db.Model(&org).Association("Users").Clear()
+	err = db.Delete(&org).Error
 	return org, err
+}
+
+func GetDeactivatedOrgsForThreshold(threshold time.Time) ([]model.Org, error) {
+	var orgs []model.Org
+	db := database.DB
+	err := db.Where("account_status = ? AND updated_at < ?", constants.DEACTIVATED, threshold).Find(&orgs).Error
+	return orgs, err
+}
+
+func GetDeletedOrgsForThreshold(threshold time.Time) ([]model.Org, error) {
+	var orgs []model.Org
+	db := database.DB
+	err := db.Where("account_status = ? AND updated_at < ?", constants.DELETED, threshold).Find(&orgs).Error
+	return orgs, err
+}
+
+func UpdateOrgs(orgs []model.Org) ([]model.Org, error) {
+	db := database.DB
+	err := db.Save(&orgs).Error
+
+	return orgs, err
+}
+
+func DeleteOrgs(orgs []model.Org) error {
+	db := database.DB
+	err := db.Model(&orgs).Association("Users").Clear()
+	err = db.Delete(&orgs).Error
+	return err
 }
