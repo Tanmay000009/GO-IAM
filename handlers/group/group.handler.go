@@ -8,8 +8,10 @@ import (
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
 	"balkantask/utils/roles"
+	"encoding/csv"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 
@@ -503,6 +505,158 @@ func SeedGroupsFromExcel(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"status":  "error",
 				"message": fmt.Sprintf("Failed to create group in row %d", rowIndex+1),
+			})
+		}
+
+		createdGroups = append(createdGroups, *createdGroup)
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Groups created successfully",
+		"status":  "success",
+		"data":    createdGroups,
+	})
+}
+
+func SeedGroupsFromCSV(c *fiber.Ctx) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid file",
+			"status":  "error",
+		})
+	}
+
+	uploadedFile, err := file.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to read uploaded file",
+			"status":  "error",
+		})
+	}
+	// Close the file after the function returns
+	defer uploadedFile.Close()
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	// Create a temporary file to save the uploaded content
+	tempFile, err := os.CreateTemp("", "upload-*.csv")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to create temporary file",
+			"status":  "error",
+		})
+	}
+	defer os.Remove(tempFile.Name())
+
+	// Save the uploaded content into the temporary file
+	_, err = io.Copy(tempFile, uploadedFile)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to save uploaded file",
+			"status":  "error",
+		})
+	}
+
+	// Open the temporary file using os
+	csvFile, err := os.Open(tempFile.Name())
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to read CSV file",
+			"status":  "error",
+		})
+	}
+	defer csvFile.Close()
+
+	// Create a new CSV reader
+	reader := csv.NewReader(csvFile)
+
+	// Skip the header row
+	_, err = reader.Read()
+	if err != nil && err != io.EOF {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to read CSV file",
+			"status":  "error",
+		})
+	}
+
+	var createdGroups []model.Group
+
+	for rowIndex := 1; ; rowIndex++ {
+		row, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Println(err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Failed to read CSV file",
+				"status":  "error",
+			})
+		}
+
+		// Check if the row has enough columns
+		if len(row) < 2 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": fmt.Sprintf("Insufficient columns in row %d", rowIndex),
+				"status":  "error",
+			})
+		}
+
+		groupName := row[0]
+		roleNames := strings.Split(row[1], " ")
+		log.Println()
+		log.Println()
+		log.Println()
+		log.Println()
+		log.Println()
+		log.Println(groupName)
+		log.Println(roleNames)
+		log.Println(roleNames)
+		log.Println()
+		log.Println()
+		log.Println()
+		log.Println()
+		log.Println()
+		// Trim spaces from role names
+		for i := range roleNames {
+			roleNames[i] = strings.TrimSpace(roleNames[i])
+		}
+
+		log.Println(roleNames)
+
+		// Retrieve the roles from the database based on role names
+		rolesExist, err := rolesRepo.GetRolesByNames(roleNames)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": fmt.Sprintf("Invalid role names in row %d", rowIndex),
+				"status":  "error",
+			})
+		}
+
+		log.Println()
+		log.Println()
+		log.Println()
+		log.Println()
+		log.Println(rolesExist)
+
+		newGroup := model.Group{
+			Name:  groupName,
+			Roles: rolesExist,
+		}
+
+		createdGroup, err := groupRepo.CreateGroup(&newGroup)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status":  "error",
+				"message": fmt.Sprintf("Failed to create group in row %d", rowIndex),
 			})
 		}
 
