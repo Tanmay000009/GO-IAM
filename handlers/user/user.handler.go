@@ -332,10 +332,9 @@ func DeleteUser(c *fiber.Ctx) error {
 	}
 
 	userToDelete, err := userRepo.FindUserByIdWithPassword(id)
-
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Internal Server Error",
+			"message": "User Not Found",
 			"status":  "false",
 		})
 	}
