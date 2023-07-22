@@ -1186,7 +1186,7 @@ func AddGroupToUser(c *fiber.Ctx) error {
 	}
 
 	// Check if the user already has the group
-	if roles.HasAnyGroup(user_.Groups, []model.Group{group}) {
+	if roles.UserHasGroup(user_.Groups, []model.Group{group}) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "User already has the group",
 			"status":  "error",
@@ -1279,7 +1279,7 @@ func DeleteGroupFromUser(c *fiber.Ctx) error {
 	}
 
 	// Check if the user has the group
-	if !roles.HasAnyGroup(user_.Groups, []model.Group{group}) {
+	if !roles.UserHasGroup(user_.Groups, []model.Group{group}) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "User does not have the group",
 			"status":  "error",

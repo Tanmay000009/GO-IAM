@@ -684,7 +684,7 @@ func TestUserGroup(c *fiber.Ctx) error {
 		})
 	}
 
-	if !userOK && !roles.HasAnyGroup(user.Groups, []model.Group{groupExists}) {
+	if !userOK && !roles.UserHasGroup(user.Groups, []model.Group{groupExists}) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",

@@ -51,7 +51,7 @@ func GroupHasRole(roles []model.Role, targetRoles []model.Role) bool {
 	return false
 }
 
-func HasAnyGroup(groups []model.Group, targetGroups []model.Group) bool {
+func UserHasGroup(groups []model.Group, targetGroups []model.Group) bool {
 	for _, targetGroup := range targetGroups {
 		for _, group := range groups {
 			if group.ID == targetGroup.ID {
