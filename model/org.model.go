@@ -15,3 +15,7 @@ type Org struct {
 	CreatedAt     *time.Time              `gorm:"not null;default:now()"`
 	UpdatedAt     *time.Time              `gorm:"not null;default:now()"`
 }
+
+func (Org) PrimaryKey() string {
+	return "Id"
+}

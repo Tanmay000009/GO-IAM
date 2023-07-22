@@ -7,3 +7,7 @@ type Role struct {
 	Users  []User  `gorm:"many2many:user_roles;constraint:OnDelete:CASCADE;"`
 	Groups []Group `gorm:"many2many:group_roles;constraint:OnDelete:CASCADE;"`
 }
+
+func (Role) PrimaryKey() string {
+	return "Id"
+}
