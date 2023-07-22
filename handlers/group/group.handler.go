@@ -8,9 +8,14 @@ import (
 	orgSchema "balkantask/schemas/org"
 	userSchema "balkantask/schemas/user"
 	"balkantask/utils/roles"
+	"fmt"
+	"io"
+	"os"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/xuri/excelize/v2"
 )
 
 func GetAllGroups(c *fiber.Ctx) error {
@@ -86,11 +91,38 @@ func CreateGroup(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if the roles exist in the database
+	// Check if the roles (id) exist in the database
 	rolesExist, err := rolesRepo.GetRolesByIds(group.RoleIds)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Invalid Role IDs",
+			"status":  "error",
+		})
+	}
+
+	// Check if the roles (name) exist in the database
+	rolesExist2, err := rolesRepo.GetRolesByNames(group.RoleNames)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid Role IDs",
+			"status":  "error",
+		})
+	}
+
+	rolesExist = append(rolesExist, rolesExist2...)
+	rolesExist = removeDuplicates(rolesExist)
+
+	groupExists, err := groupRepo.GetGroupByName(group.Name)
+	if err != nil && err.Error() != "record not found" {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal Server Error",
+			"status":  "error",
+		})
+	}
+
+	if groupExists.ID != uuid.Nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Group already exists",
 			"status":  "error",
 		})
 	}
@@ -357,4 +389,144 @@ func DeleteRoleFromGroup(c *fiber.Ctx) error {
 		"status":  "success",
 		"data":    group,
 	})
+}
+
+func SeedGroupsFromExcel(c *fiber.Ctx) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid file",
+			"status":  "error",
+		})
+	}
+
+	uploadedFile, err := file.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to read uploaded file",
+			"status":  "error",
+		})
+	}
+	// Close the file after the function returns
+	defer uploadedFile.Close()
+
+	_, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.GroupWriteAccess, roles.OrgFullAccess, roles.OrgWriteAccess, roles.GroupFullAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	// Create a temporary file to save the uploaded content
+	tempFile, err := os.CreateTemp("", "upload-*.xlsx")
+	// CreateTemp function, it generates a unique temporary file name by replacing the asterisk (*) with a random string.
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to create temporary file",
+			"status":  "error",
+		})
+	}
+	defer os.Remove(tempFile.Name())
+
+	// Save the uploaded content into the temporary file
+	_, err = io.Copy(tempFile, uploadedFile)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to save uploaded file",
+			"status":  "error",
+		})
+	}
+
+	// Open the temporary file using excelize
+	xlsx, err := excelize.OpenFile(tempFile.Name())
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to read Excel file",
+			"status":  "error",
+		})
+	}
+
+	// Define the columns to read from the Excel file (adjust the column numbers accordingly)
+	groupNameCol := 1
+	roleNamesCol := 2
+
+	rows, err := xlsx.GetRows("Sheet1")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to read Excel file",
+			"status":  "error",
+		})
+	}
+
+	var createdGroups []model.Group
+
+	for rowIndex, row := range rows {
+		if rowIndex == 0 {
+			continue
+		}
+
+		// Check if the row has enough columns
+		if len(row) < roleNamesCol {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": fmt.Sprintf("Insufficient columns in row %d", rowIndex+1),
+				"status":  "error",
+			})
+		}
+
+		groupName := row[groupNameCol-1]
+		roleNames := strings.Split(row[roleNamesCol-1], ",")
+
+		// Trim spaces from role names
+		for i := range roleNames {
+			roleNames[i] = strings.TrimSpace(roleNames[i])
+		}
+
+		// Retrieve the roles from the database based on role names
+		rolesExist, err := rolesRepo.GetRolesByNames(roleNames)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": fmt.Sprintf("Invalid role names in row %d", rowIndex+1),
+				"status":  "error",
+			})
+		}
+
+		newGroup := model.Group{
+			Name:  groupName,
+			Roles: rolesExist,
+		}
+
+		createdGroup, err := groupRepo.CreateGroup(&newGroup)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status":  "error",
+				"message": fmt.Sprintf("Failed to create group in row %d", rowIndex+1),
+			})
+		}
+
+		createdGroups = append(createdGroups, *createdGroup)
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Groups created successfully",
+		"status":  "success",
+		"data":    createdGroups,
+	})
+}
+
+func removeDuplicates(rolesExist []model.Role) []model.Role {
+
+	uniqueRolesMap := make(map[uuid.UUID]struct{})
+	var uniqueRoles []model.Role
+
+	for _, role := range rolesExist {
+		if _, found := uniqueRolesMap[role.ID]; !found {
+			uniqueRolesMap[role.ID] = struct{}{}
+			uniqueRoles = append(uniqueRoles, role)
+		}
+	}
+
+	return uniqueRoles
 }
