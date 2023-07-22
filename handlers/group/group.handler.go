@@ -387,7 +387,7 @@ func DeleteRoleFromGroup(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Role removed from user",
+		"message": "Role removed from group",
 		"status":  "success",
 		"data":    group,
 	})
