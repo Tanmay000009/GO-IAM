@@ -9,6 +9,7 @@ import (
 	userSchema "balkantask/schemas/user"
 	constants "balkantask/utils"
 	"balkantask/utils/roles"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -704,6 +705,14 @@ func SeedUsersFromExcel(c *fiber.Ctx) error {
 		})
 	}
 
+	var orgId uuid.UUID
+
+	if org.ID != uuid.Nil {
+		orgId = org.ID
+	} else {
+		orgId = user.OrgId
+	}
+
 	// Create a temporary file to save the uploaded content
 	tempFile, err := os.CreateTemp("", "upload-*.xlsx")
 	// CreateTemp function, it generates a unique temporary file name by replacing the asterisk (*) with a random string.
@@ -774,6 +783,21 @@ func SeedUsersFromExcel(c *fiber.Ctx) error {
 			})
 		}
 
+		existingUser, err := userRepo.FindUserByOrgAndUsernameWithPassword(username, orgId.String())
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Internal Server Error",
+				"status":  "error",
+			})
+		}
+
+		if existingUser.ID != uuid.Nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": fmt.Sprintf("User with username %s already exists", username),
+				"status":  "error",
+			})
+		}
+
 		if excelUser.Password == "" {
 			excelUser.Password, err = pass.Generate(10, 4, 2, true, true)
 			if err != nil {
@@ -796,12 +820,7 @@ func SeedUsersFromExcel(c *fiber.Ctx) error {
 			Username:      excelUser.Username,
 			Password:      string(hashedPassword),
 			AccountStatus: constants.ACTIVATED,
-		}
-
-		if org.ID != uuid.Nil {
-			newUser.OrgID = org.ID
-		} else {
-			newUser.OrgID = user.OrgId
+			OrgID:         orgId,
 		}
 
 		createdUser, err := userRepo.CreateUser(newUser)
@@ -821,6 +840,185 @@ func SeedUsersFromExcel(c *fiber.Ctx) error {
 			OrgId:         createdUser.OrgId,
 			AccountStatus: createdUser.AccountStatus,
 			Passcode:      excelUser.Password,
+		}
+		seededUsers = append(seededUsers, resData)
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Users seeded successfully",
+		"status":  "success",
+		"data":    seededUsers,
+	})
+}
+
+func SeedUsersFromCSV(c *fiber.Ctx) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid file",
+			"status":  "error",
+		})
+	}
+
+	uploadedFile, err := file.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to read uploaded file",
+			"status":  "error",
+		})
+	}
+	// Close the file after the function returns
+	defer uploadedFile.Close()
+
+	org, orgOK := c.Locals("org").(orgSchema.OrgResponse)
+	user, userOK := c.Locals("user").(userSchema.UserResponse)
+
+	if !orgOK && !userOK && !roles.HasAnyRole(user.Roles, user.Groups, []roles.Role{roles.OrgFullAccess, roles.UserFullAccess, roles.OrgWriteAccess, roles.UserWriteAccess}) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "Forbidden",
+			"status":  "error",
+		})
+	}
+
+	var orgId uuid.UUID
+
+	if org.ID != uuid.Nil {
+		orgId = org.ID
+	} else {
+		orgId = user.OrgId
+	}
+
+	// Create a temporary file to save the uploaded content
+	tempFile, err := os.CreateTemp("", "upload-*.csv")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to create temporary file",
+			"status":  "error",
+		})
+	}
+	defer os.Remove(tempFile.Name())
+
+	// Save the uploaded content into the temporary file
+	_, err = io.Copy(tempFile, uploadedFile)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to save uploaded file",
+			"status":  "error",
+		})
+	}
+
+	// Open the temporary file using os
+	csvFile, err := os.Open(tempFile.Name())
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to read CSV file",
+			"status":  "error",
+		})
+	}
+	defer csvFile.Close()
+
+	// Create a new CSV reader
+	reader := csv.NewReader(csvFile)
+
+	// Skip the header row
+	if _, err := reader.Read(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to read CSV file",
+			"status":  "error",
+		})
+	}
+
+	var seededUsers []userSchema.CreateUserResponse
+
+	for rowIndex := 1; ; rowIndex++ {
+		row, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Failed to read CSV file",
+				"status":  "error",
+			})
+		}
+
+		// Check if the row has enough columns, if not, set an empty password
+		if len(row) < 2 {
+			row = append(row, "")
+		}
+
+		username := row[0]
+		password := row[1]
+
+		csvUser := model.User{
+			Username: username,
+			Password: password,
+		}
+		errors := model.ValidateStruct(csvUser)
+		if errors != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": fmt.Sprintf("Validation error in row %d", rowIndex),
+				"status":  "error",
+				"errors":  errors,
+			})
+		}
+
+		existingUser, err := userRepo.FindUserByOrgAndUsernameWithPassword(username, orgId.String())
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Internal Server Error",
+				"status":  "error",
+			})
+		}
+
+		if existingUser.ID != uuid.Nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": fmt.Sprintf("User with username %s already exists", username),
+				"status":  "error",
+			})
+		}
+
+		if csvUser.Password == "" {
+			csvUser.Password, err = pass.Generate(10, 4, 2, true, true)
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"message": "Internal Server Error",
+					"status":  "error",
+				})
+			}
+		}
+
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(csvUser.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Internal Server Error",
+				"status":  "error",
+			})
+		}
+
+		newUser := model.User{
+			Username:      csvUser.Username,
+			Password:      string(hashedPassword),
+			AccountStatus: constants.ACTIVATED,
+			OrgID:         orgId,
+		}
+
+		createdUser, err := userRepo.CreateUser(newUser)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": fmt.Sprintf("Failed to seed user in row %d", rowIndex),
+				"status":  "error",
+			})
+		}
+
+		resData := userSchema.CreateUserResponse{
+			ID:            createdUser.ID,
+			Username:      createdUser.Username,
+			CreatedAt:     createdUser.CreatedAt,
+			UpdatedAt:     createdUser.UpdatedAt,
+			Roles:         createdUser.Roles,
+			OrgId:         createdUser.OrgId,
+			AccountStatus: createdUser.AccountStatus,
+			Passcode:      csvUser.Password,
 		}
 		seededUsers = append(seededUsers, resData)
 	}
