@@ -38,6 +38,14 @@ func GetRoleByName(name string) (model.Role, error) {
 	return role, err
 }
 
+func GetRolesByNames(name []string) ([]model.Role, error) {
+	db := database.DB
+	var role []model.Role
+	err := db.Find(&role, "name IN ?", name).Error
+
+	return role, err
+}
+
 func CreateRole(role model.Role) (model.Role, error) {
 	db := database.DB
 	err := db.Create(&role).Error

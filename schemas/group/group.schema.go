@@ -10,6 +10,7 @@ type AddOrDeleteRole struct {
 }
 
 type CreateGroup struct {
-	Name    string      `json:"name" validate:"required"`
-	RoleIds []uuid.UUID `json:"roleIds" validate:"required"`
+	Name      string      `json:"name" validate:"required"`
+	RoleIds   []uuid.UUID `json:"roleIds"`
+	RoleNames []string    `json:"roleNames"`
 }
