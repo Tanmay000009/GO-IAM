@@ -26,18 +26,7 @@ The Task Management Web Application is a user-friendly system that allows indivi
 
 ## Resources
 
-- [Deployed Server URL](http://dyte-232883358.ap-south-1.elb.amazonaws.com)
-
-- [API Documentation](http://dyte-232883358.ap-south-1.elb.amazonaws.com/api)
-
-- [Postman collection](https://www.postman.com/lively-crater-584197/workspace/dyte)
-  (Deployed url & tokens are set in global)
-
-- Password for all seeded users is `password`.
-
-- Admin username: `admin`.
-
-- Few student usernames: `20BCE0755`, `20BCE0001`
+- [Postman collection](https://warped-eclipse-990288.postman.co/workspace/b96e819e-4478-42e8-9999-dd0a4efe4053)
 
 ### Built With
 
