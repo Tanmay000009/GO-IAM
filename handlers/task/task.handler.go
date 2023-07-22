@@ -684,7 +684,7 @@ func TestUserTask(c *fiber.Ctx) error {
 		})
 	}
 
-	if !userOK && !roles.UserHasTaskAuthorization(user.Roles, user.Groups, taskExists) {
+	if !userOK || !roles.UserHasTaskAuthorization(user.Roles, user.Groups, taskExists) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Forbidden",
