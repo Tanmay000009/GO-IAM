@@ -2,7 +2,7 @@
 
 ## About The Project
 
-The Task Management Web Application is a user-friendly system that allows individuals to create accounts for their organizations. The account owner, known as the super user, gains administrative privileges and can manage users, groups, roles, and tasks within the organization, leveraging Role-Based Access Control (RBAC) for authorization. It ensures strong security measures to protect against potential threats and supports easy data upload using CSV and Excel files. The application is built with GoLang, GoFiber, and GORM, and it is containerized using Docker for easy deployment. The database options include PostgreSQL.
+The GO-IAM is a user-friendly system that allows individuals to create accounts for their organizations. The account owner, known as the super user, gains administrative privileges and can manage users, groups, roles, and tasks within the organization, leveraging Role-Based Access Control (RBAC) for authorization. It ensures strong security measures to protect against potential threats and supports easy data upload using CSV and Excel files. The application is built with GoLang, GoFiber, and GORM, and it is containerized using Docker for easy deployment. The database options include PostgreSQL.
 
 ## Resources
 
