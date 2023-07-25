@@ -1,17 +1,3 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/YCCXVJKc)
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-718a45dd9cf7e7f842a935f5ebbe5719a5e09af4491e668f4dbf3b35d5cca122.svg)](https://classroom.github.com/online_ide?assignment_repo_id=11469711&assignment_repo_type=AssignmentRepo)
-<!-- PROJECT SHIELDS -->
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
-
-  <h3 align="center">Tanmay Vyas's submission</h3>
-
-  <p align="center">
-    Submission to BalkanID FTE hiring by Tanmay Vyas 20BCE0755
-  </p>
-</div>
-
 <!-- ABOUT THE PROJECT -->
 
 ## About The Project
@@ -25,9 +11,9 @@ The Task Management Web Application is a user-friendly system that allows indivi
 ### Built With
 
 ![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)
+![GoFiber](https://img.shields.io/badge/gofiber-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
 ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=Postman&logoColor=white)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -38,17 +24,18 @@ The Task Management Web Application is a user-friendly system that allows indivi
 
 - While generating user accounts, password is optional. If it is not provided, a system generated password will be provided with the response.
 - To test roles and groups assigned to a user routes are provided. Refer postman for it.
-- Presently, 12 system generated roles will be able. You can use read roles to access it.
-- Accessing the resources requires user to be authorized with roles.
 - When using a new database please seed roles using the seed role route in postman.
+- Presently, 12 system generated roles will be able. You can use read roles to access them.
+- Accessing the resources requires user to be authorized with roles.
+- Application is made of sub modules, so it'll be easier to migrate to microservices in future.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Docker
-- Docker Compose
 - GoLang
+- Docker (optional)
+- Docker Compose (optional)
 
 ### Running Go Locally
 
@@ -76,6 +63,18 @@ go run main.go
 docker-compose up -d
 ```
 
+OR
+
+```
+./compose.sh
+```
+
+> If you are facing permission issues, run the following command:
+
+```
+chmod +x run.sh
+```
+
 6. The application will be accessible at http://localhost:3000.
 
 ### Using Docker Image
@@ -85,12 +84,6 @@ docker-compose up -d
 3. Navigate to the root directory of the project.
 4. Take reference from the `.env.example` file to create the environment file `.env` and update the environment variables as needed.
 5. Run the following command to build the Docker image:
-
-```
-./run.sh
-```
-
-OR
 
 > Build the Docker image using the current directory as the build context
 
@@ -105,7 +98,13 @@ docker build -t tanmaybalkantask:latest .
 docker run -it -p 3000:3000 --env-file .env tanmaybalkantask:latest
 ```
 
-6. If you are facing permission issues, run the following command:
+OR
+
+```
+./run.sh
+```
+
+> If you are facing permission issues, run the following command:
 
 ```
 chmod +x run.sh
@@ -117,25 +116,6 @@ chmod +x run.sh
 
 <!-- CONTACT -->
 
-## Checklist
-
-It lists out all the features successfully implemented. The remaining tasks are presented in descending order of priority.
-
-- [x] Secure user registration and authentication
-- [x] Account Deactivation and Deletion: Allow users to deactivate or delete their accounts. I
-- [x] Implement a mechanism to handle account deletion securely while
-      considering data retention policies.
-- [x] Role-based and Group-based access management on resources(Tasks) with ability to create custom roles and groups
-- [x] Protection against vulnerabilities like SQL injection attacks. Used GORM
-- [x] Support for bulk upload using CSV(Both users and tasks) making sure all the
-      relationships are preserved accurately. (Added support for excel also)
-- [x] Docker and containerize your application code to run, including the
-      database.
-- [ ] Multi-tenant functionality. (Almost done). Fully suppoers multi-tenancy but implementation of postgres schemas was something I was not able to do.
-- [ ] Use a reverse-proxy of your choice. (Partilly done)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 ## Contact
 
 Tanmay Vyas
@@ -143,3 +123,4 @@ Tanmay Vyas
 [![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Tanmay000009)
 [![LinkedIn](https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/tanmay-vyas-09/)
 [![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:tanmayvyas09@gmail.com)
+[![Resume](https://img.shields.io/badge/Resume-000000?style=for-the-badge&logo=read-the-docs&logoColor=white)](https://drive.google.com/file/d/1lkfmeqseeSwK1GlJHEblz2ZuYzdNBRhm/view?usp=drive_link)
